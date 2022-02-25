@@ -10,4 +10,4 @@ php artisan migrate:fresh --seed #for database with seed
 php artisan serve
 
 ####Migration Command
-#php artisan make:migration system_users_hidden_columns
+#php artisan make:migration users_groups
