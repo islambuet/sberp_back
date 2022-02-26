@@ -4,16 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class UsersGroups extends Migration
+class SystemConfigurations extends Migration
 {
-    public $actions = [
-        '0' => 'VIEW',
-        '1' => 'ADD',
-        '2' => 'EDIT',
-        '3' => 'DELETE'
-        
-    ];
-
     /**
      * Run the migrations.
      *
@@ -21,17 +13,15 @@ class UsersGroups extends Migration
      */
     public function up()
     {
-        Schema::create(TABLE_USERS_GROUPS, function (Blueprint $table) {
+        Schema::create(TABLE_SYSTEM_CONFIGURATIONS, function (Blueprint $table) {
             $table->increments('id');
-            $table->string('name', 100);
-            $table->integer('ordering')->default(9999);
+            $table->string('purpose');
+            $table->string('config_value');
+            $table->text('description')->nullable();
             $table->enum('status', [SYSTEM_STATUS_ACTIVE, SYSTEM_STATUS_INACTIVE, SYSTEM_STATUS_DELETE])->default('Active')->comment(SYSTEM_STATUS_ACTIVE, SYSTEM_STATUS_INACTIVE, SYSTEM_STATUS_DELETE);            
-            foreach ($this->actions as $key => $action) {
-                $table->string('action_' . $key)->default(',')->comment($action);
-            }
             $table->integer('created_by');
             $table->integer('updated_by')->nullable();
-            $table->timestamps();            
+            $table->timestamps();
         });
     }
 
@@ -42,6 +32,6 @@ class UsersGroups extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists(TABLE_USERS_GROUPS);
+        Schema::dropIfExists(TABLE_SYSTEM_CONFIGURATIONS);
     }
 }

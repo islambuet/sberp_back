@@ -15,9 +15,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([                       
             UsersGroups::class,
-            // SystemTasksSeeder::class,            
-            // SystemConfigurationsSeeder::class, 
-            // UsersTypesSeeder::class,
+            SystemConfigurations::class,
+            SystemTasks::class,                                    
+            Occupations::class,                                    
             // UsersSeeder::class,            
         ]);
     }
