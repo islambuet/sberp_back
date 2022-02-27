@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
             SystemConfigurations::class,
             SystemTasks::class,                                    
             Occupations::class,                                    
-            // UsersSeeder::class,            
+            Users::class,            
         ]);
     }
 }
