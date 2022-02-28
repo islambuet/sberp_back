@@ -12,3 +12,4 @@ php artisan serve
 ####Migration Command
 #php artisan make:migration users_groups
 #php artisan make:seeder UsersGroups
+#php artisan make:mail MailSender
