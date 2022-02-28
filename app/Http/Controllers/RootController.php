@@ -1,29 +1,18 @@
 <?php
 namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
-/**
- * Loading Constants for Database Tables and Varaibles
- */
-
-// require_once base_path().'/config/variables/tables/system.php';
-// require_once base_path().'/config/variables/tables/main.php';
-// require_once base_path().'/config/variables/system_status.php';
-// require_once base_path().'/config/variables/db_actions.php';
-// require_once base_path().'/config/variables/ids.php';
-
 
 use Illuminate\Http\Request;
-// use App\Helpers\ConfigurationHelper;
-// use App\Helpers\UserHelper;
+use App\Helpers\ConfigurationHelper;
+use App\Helpers\UserHelper;
 
 abstract class RootController extends Controller
 {
     public $user;
     public function __construct(Request $request)
     {
-        // ConfigurationHelper::load_config();
-        // $this->checkApioffline($request);
-        // $this->user=UserHelper::getCurrentUser();
+        ConfigurationHelper::load_config();                
+        $this->user=UserHelper::getCurrentUser();        
     }
    
     /*
@@ -37,11 +26,10 @@ abstract class RootController extends Controller
 	**$data['created_at']	:Creating time
     **$data['created_by']	:Action User
 
-	**$tableHistory			:Name of the history table:='ams_back.system_histories'
+	**$tableHistory			:Name of the history table:='system_histories'
 
 	*/
-    public function dBSaveHistory($data,$tableHistory){
-        //$data['created_at']==xx
+    public function dBSaveHistory($data,$tableHistory){        
         DB::table($tableHistory)->insertGetId($data);
     }
 }

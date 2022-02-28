@@ -17,9 +17,9 @@ class SystemConfigurations extends Seeder
     public function run()
     {
         DB::table(TABLE_SYSTEM_CONFIGURATIONS)->insert([
-            'purpose' => SYSTEM_CONFIGURATIONS_APP_OFFLINE,
-            'description' => 'Making the application go offline.',
-            'config_value' => 0,
+            'purpose' => SYSTEM_CONFIGURATIONS_OTP_EXPIRE,
+            'description' => 'Otp expires in seconds.',
+            'config_value' => 30,
             'created_by' => 1,
             'created_at'=>Carbon::now()
         ]);
