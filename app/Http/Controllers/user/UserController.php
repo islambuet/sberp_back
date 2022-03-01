@@ -14,13 +14,15 @@ use Illuminate\Http\Request;
 // use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 // use Illuminate\Support\Facades\Schema;
-
 // use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+
+use Illuminate\Validation\Rule;
 
 // use App\Models\User;
 use App\Mail\MailSender;
-use Illuminate\Support\Facades\Mail;
+
 use Carbon\Carbon;
 
 class UserController extends RootController
@@ -41,7 +43,7 @@ class UserController extends RootController
         $itemNew=$request->item;
         $this->validateInputKeys($itemNew,array_keys($validation_rule));
         $this->validateInputValues($itemNew,$validation_rule);
-        
+
         DB::beginTransaction();
         try{
             $itemNew['password']=Hash::make($itemNew['password']);
@@ -49,33 +51,29 @@ class UserController extends RootController
             $itemNew['created_at']=Carbon::now();            
             DB::table(TABLE_USERS)->insertGetId($itemNew);
             DB::commit();            
-            return response()->json(['error' => '','data' =>array()],200);
+            return response()->json(['error' => '','messages'=>__('messages.registration_success'),'data' =>array()],200);
         } catch (\Exception $ex) {
             //print_r($ex);
             // ELSE rollback & throw exception
             DB::rollback();
-            return response()->json(['error' => 'SERVER_ERROR', 'errorMessage'=>__('response.SERVER_ERROR')]);
+            return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
         }  
     }
     public function sendOtp(Request $request)
     {
+        
         // //accepted inputs and validation rule
-        // $validation_rule=array();            
-        // $validation_rule['email']=['required', 'string', 'email'];
-        // $validation_rule['reason']=['required','min:3','max:255','alpha_dash'];
+        $validation_rule=array();            
+        $validation_rule['email']=['required', 'string', 'email'];
+        $validation_rule['reason']=['required',Rule::in([0, 1])]; 
+        $itemNew=$request->item;
+        $this->validateInputKeys($itemNew,array_keys($validation_rule));
+        $this->validateInputValues($itemNew,$validation_rule);
 
-        // $itemNew=$request->item;
-
-        // //checking if any input there
-        // if(!is_array($itemNew)){
-        //     return response()->json(['error'=>'VALIDATION_FAILED','message'=>__('validation.input_not_found')]);
-        // }
-        // //checking if any invalid input
-        // foreach($itemNew as $key=>$value){            
-        //     if( !$key || (!in_array ($key,array_keys($validation_rule)))){                        
-        //         return response()->json(['error'=>'VALIDATION_FAILED','message'=>__('validation.input_not_valid',['attribute'=>$key])]);
-        //     }
-        // }
+        $user = DB::table(TABLE_USERS)->select('*')->where('email',$itemNew['email'])->first();            
+        if(!$user){
+            return response()->json(['error'=>'EMAIL_NOT_EXISTS', 'messages'=>__('messages.email_not_exits')]);
+        }
     }
     public function login(Request $request)
     {
