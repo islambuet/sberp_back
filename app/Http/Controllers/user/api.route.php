@@ -8,6 +8,7 @@ $url='user';
 $controllerClass=Controllers\user\UserController::class;
 
 Route::match(array('GET','POST'),$url.'/registration', [$controllerClass, 'registration']);
+Route::match(array('GET','POST'),$url.'/send-otp', [$controllerClass, 'sendOtp']);
 Route::post($url.'/login', [$controllerClass, 'login']);
 Route::match(array('GET','POST'),$url.'/logout', [$controllerClass, 'logout']);
 

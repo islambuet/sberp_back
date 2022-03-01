@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Helpers\ConfigurationHelper;
 use App\Helpers\UserHelper;
+use Illuminate\Support\Facades\Validator;
 
 abstract class RootController extends Controller
 {
@@ -31,5 +32,29 @@ abstract class RootController extends Controller
 	*/
     public function dBSaveHistory($data,$tableHistory){        
         DB::table($tableHistory)->insertGetId($data);
+    }
+    public function validateInputKeys($inputs,$keys){
+         //checking if any input there
+         if(!is_array($inputs)){
+            response()->json(['error'=>'VALIDATION_FAILED','message'=>__('validation.input_not_found')])->send();
+            exit;
+        }
+        //checking if any invalid input
+        foreach($inputs as $key=>$value){            
+            if( !$key || (!in_array ($key,$keys))){                        
+                response()->json(['error'=>'VALIDATION_FAILED','message'=>__('validation.input_not_valid',['attribute'=>$key])])->send();
+                exit;
+            }
+        }
+
+
+    }
+    public function validateInputValues($inputs,$validation_rule){
+        $validator = Validator::make($inputs, $validation_rule);
+        if ($validator->fails()) {
+            response()->json(['error' => 'VALIDATION_FAILED','message' => $validator->errors()])->send();
+            exit;
+        }
+
     }
 }

@@ -14,12 +14,13 @@ use Illuminate\Http\Request;
 // use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 // use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Validator;
+
 // use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 // use App\Models\User;
-
+use App\Mail\MailSender;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
 class UserController extends RootController
@@ -38,22 +39,8 @@ class UserController extends RootController
         $validation_rule['password']=['required','min:3','max:255','alpha_dash'];
 
         $itemNew=$request->item;
-
-        //checking if any input there
-        if(!is_array($itemNew)){
-            return response()->json(['error'=>'VALIDATION_FAILED','message'=>__('validation.input_not_found')]);
-        }
-        //checking if any invalid input
-        foreach($itemNew as $key=>$value){            
-            if( !$key || (!in_array ($key,array_keys($validation_rule)))){                        
-                return response()->json(['error'=>'VALIDATION_FAILED','message'=>__('validation.input_not_valid',['attribute'=>$key])]);
-            }
-        }
-
-        $validator = Validator::make($itemNew, $validation_rule);
-        if ($validator->fails()) {
-            return response()->json(['error' => 'VALIDATION_FAILED','message' => $validator->errors()]);
-        }
+        $this->validateInputKeys($itemNew,array_keys($validation_rule));
+        $this->validateInputValues($itemNew,$validation_rule);
         
         DB::beginTransaction();
         try{
@@ -70,9 +57,31 @@ class UserController extends RootController
             return response()->json(['error' => 'SERVER_ERROR', 'errorMessage'=>__('response.SERVER_ERROR')]);
         }  
     }
+    public function sendOtp(Request $request)
+    {
+        // //accepted inputs and validation rule
+        // $validation_rule=array();            
+        // $validation_rule['email']=['required', 'string', 'email'];
+        // $validation_rule['reason']=['required','min:3','max:255','alpha_dash'];
+
+        // $itemNew=$request->item;
+
+        // //checking if any input there
+        // if(!is_array($itemNew)){
+        //     return response()->json(['error'=>'VALIDATION_FAILED','message'=>__('validation.input_not_found')]);
+        // }
+        // //checking if any invalid input
+        // foreach($itemNew as $key=>$value){            
+        //     if( !$key || (!in_array ($key,array_keys($validation_rule)))){                        
+        //         return response()->json(['error'=>'VALIDATION_FAILED','message'=>__('validation.input_not_valid',['attribute'=>$key])]);
+        //     }
+        // }
+    }
     public function login(Request $request)
     {
-        return response()->json(['error'=>'VALIDATION_FAILED','errorMessage'=>__('validation.already_exists',['attribute'=>'username'])], 416);
+        //return view('emails.otp_email_verify');
+        //return Mail::to('shaiful.islam@aclusterllc.com')->send(new MailSender('emails.otp_email_verify',"test subject",['otp'=>'123']));
+        //return response()->json(['error'=>'VALIDATION_FAILED','errorMessage'=>__('validation.already_exists',['attribute'=>'username'])], 416);
     }
     
     
