@@ -7,3 +7,4 @@ CONST TABLE_SYSTEM_TASKS= 'system_tasks';
 CONST TABLE_SYSTEM_TOKENS= 'system_tokens';
 CONST TABLE_OCCUPATIONS= 'occupations';
 CONST TABLE_USERS= 'users';
+CONST TABLE_USER_OTPS= 'user_otps';
