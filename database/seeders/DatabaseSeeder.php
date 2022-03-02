@@ -14,11 +14,11 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         $this->call([                       
-            UsersGroups::class,
-            SystemConfigurations::class,
-            SystemTasks::class,                                    
-            Occupations::class,                                    
-            Users::class,            
+            // UserGroups::class,
+            // SystemConfigurations::class,
+            // SystemTasks::class,                                    
+            // Occupations::class,                                    
+            // Users::class,            
         ]);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-CONST TABLE_USERS_GROUPS= 'users_groups';
+CONST TABLE_USER_GROUPS= 'user_groups';
 CONST TABLE_SYSTEM_HISTORIES= 'system_histories';
 CONST TABLE_SYSTEM_CONFIGURATIONS= 'system_configurations';
 CONST TABLE_SYSTEM_TASKS= 'system_tasks';
