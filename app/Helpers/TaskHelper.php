@@ -8,7 +8,7 @@
         public static function getUserGroupRole($user_group_id)
         {
             $role=array();
-            $query=DB::table(TABLE_USERS_GROUPS);
+            $query=DB::table(TABLE_USER_GROUPS);
             $query->where('id', $user_group_id);
             for($i=0;$i<self::$MAX_MODULE_ACTIONS;$i++)
             {

@@ -10,6 +10,6 @@ php artisan migrate:fresh --seed #for database with seed
 php artisan serve
 
 ####Migration Command
-#php artisan make:migration users_groups
-#php artisan make:seeder UsersGroups
+#php artisan make:migration create_user_groups
+#php artisan make:seeder UserGroupsSeeder
 #php artisan make:mail MailSender
