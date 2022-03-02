@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 // use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 // use Illuminate\Support\Facades\Schema;
-// use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 
@@ -74,12 +74,58 @@ class UserController extends RootController
         if(!$user){
             return response()->json(['error'=>'EMAIL_NOT_EXISTS', 'messages'=>__('messages.email_not_exits')]);
         }
-    }
-    public function login(Request $request)
-    {
         //return view('emails.otp_email_verify');
         //return Mail::to('shaiful.islam@aclusterllc.com')->send(new MailSender('emails.otp_email_verify',"test subject",['otp'=>'123']));
         //return response()->json(['error'=>'VALIDATION_FAILED','errorMessage'=>__('validation.already_exists',['attribute'=>'username'])], 416);
+    }
+    public function login(Request $request)
+    {
+        //accepted inputs and validation rule
+        $validation_rule=array();
+        $validation_rule['email']=['required', 'string', 'email', 'max:255'];
+        $validation_rule['password']=['required','min:3','max:255','alpha_dash'];
+
+        $itemNew=$request->item;
+        $this->validateInputKeys($itemNew,array_keys($validation_rule));
+        $this->validateInputValues($itemNew,$validation_rule);
+        $userFound = DB::table(TABLE_USERS)->select('email','password','email_verified_at','status')->where('email',$itemNew['email'])->first();            
+        if($userFound){
+            if($userFound->status = SYSTEM_STATUS_ACTIVE){
+                if(!is_null($userFound->email_verified_at)){
+                    return response()->json(['error'=>'EMAIL_NOT_VERIFIED', 'messages'=>__('messages.email_not_verified')]);
+                }
+                else{
+                    if(Hash::check($itemNew['password'], $userFound->password)){
+                        if(Auth::attempt(['email'=>$itemNew['email'],'password'=>$itemNew['password']]))
+                        {
+                            $user = Auth::user();
+                            $user['authToken'] = Auth::user()->createToken('ip:'.$request->server('REMOTE_ADDR').';User agent:'.$request->server('HTTP_USER_AGENT'))->plainTextToken;                              
+                            $response['data']=['authToken'=>$user['authToken']];
+                            return response()->json($response, 200);
+                        }else
+                        {
+                            $response['error'] = 'INVALID_CREDENTIALS';
+                            $response['errorMessage'] = __('user.INVALID_CREDENTIALS');
+                            return response()->json($response, 401);
+                        }
+
+                    }
+                    else{
+                        return response()->json(['error'=>'INVALID_CREDENTIALS', 'messages'=>__('messages.invalid_credentials')]);
+                    }
+                }
+
+            }
+            else{
+                return response()->json(['error'=>'ITEM_NOT_FOUND', 'messages'=>__('messages.user_invalid')]);
+            }    
+        }
+        else{
+            return response()->json(['error'=>'EMAIL_NOT_EXISTS', 'messages'=>__('messages.email_not_exits')]);
+        }
+        
+
+
     }
     
     
