@@ -91,7 +91,7 @@ class UserController extends RootController
         $userFound = DB::table(TABLE_USERS)->select('email','password','email_verified_at','status')->where('email',$itemNew['email'])->first();            
         if($userFound){
             if($userFound->status = SYSTEM_STATUS_ACTIVE){
-                if(!is_null($userFound->email_verified_at)){
+                if(is_null($userFound->email_verified_at)){
                     return response()->json(['error'=>'EMAIL_NOT_VERIFIED', 'messages'=>__('messages.email_not_verified')]);
                 }
                 else{
@@ -126,6 +126,10 @@ class UserController extends RootController
         
 
 
+    }
+    public function ChangePassword(Request $request)
+    {
+        echo "hi";
     }
     
     

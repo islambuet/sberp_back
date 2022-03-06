@@ -11,6 +11,7 @@ return [
     'email_not_exits'=>'Email does not exits',
     'email_not_verified'=>'Email not verified',
     'user_invalid'=>'User is invalid',
+    'user_session_expired'=>'Session Expired',
     'invalid_credentials'=>'Invalid Credentials',
 
     // 'API_OFFLINE' => 'Site is currently offline. Wait some moment and refresh your browser. You may contact with system admin.',

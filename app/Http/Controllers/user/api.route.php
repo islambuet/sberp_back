@@ -12,10 +12,10 @@ Route::match(array('GET','POST'),$url.'/send-otp', [$controllerClass, 'sendOtp']
 Route::post($url.'/login', [$controllerClass, 'login']);
 Route::match(array('GET','POST'),$url.'/logout', [$controllerClass, 'logout']);
 
-// Route::middleware('logged-user')->group(function(){
-//     $url='user';
-//     $controllerClass=Controllers\user\UserController::class;
-//     Route::post($url.'/profile-picture', [$controllerClass, 'profilePicture']);
-//     Route::post($url.'/change-password', [$controllerClass, 'ChangePassword']);
-// });
+Route::middleware('logged-user')->group(function(){
+    $url='user';
+    $controllerClass=Controllers\user\UserController::class;
+    //Route::post($url.'/profile-picture', [$controllerClass, 'profilePicture']);
+    Route::post($url.'/change-password', [$controllerClass, 'ChangePassword']);
+});
 
