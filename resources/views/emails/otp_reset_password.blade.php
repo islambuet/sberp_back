@@ -4,7 +4,7 @@
 </p>
 
 <p>    
-    Your Email veification code is <b>{{$data['otp']}}</b>    
+    Your reset password veification code is <b>{{$data['otp']}}</b>    
 </p>
 
 <p>This otp will expire in {{isset($data['expires'])?$data['expires'].' seconds' :'few minutes'}}.</p>

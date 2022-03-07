@@ -7,6 +7,8 @@ use App\Http\Controllers\RootController;
 // use App\Helpers\TokenHelper;
 // use App\Helpers\UserHelper;
 // use App\Helpers\UploadHelper;
+use App\Helpers\OtpHelper;
+use App\Helpers\ConfigurationHelper;
 
 use Illuminate\Http\Request;
 
@@ -62,10 +64,10 @@ class UserController extends RootController
     public function sendOtp(Request $request)
     {
         
-        // //accepted inputs and validation rule
+        //accepted inputs and validation rule
         $validation_rule=array();            
         $validation_rule['email']=['required', 'string', 'email'];
-        $validation_rule['reason']=['required',Rule::in([0, 1])]; 
+        $validation_rule['reason']=['required',Rule::in([0, 1,2])]; 
         $itemNew=$request->item;
         $this->validateInputKeys($itemNew,array_keys($validation_rule));
         $this->validateInputValues($itemNew,$validation_rule);
@@ -73,8 +75,31 @@ class UserController extends RootController
         $user = DB::table(TABLE_USERS)->select('*')->where('email',$itemNew['email'])->first();            
         if(!$user){
             return response()->json(['error'=>'EMAIL_NOT_EXISTS', 'messages'=>__('messages.email_not_exits')]);
-        }
-        //return view('emails.otp_email_verify');
+        } 
+        $expires=ConfigurationHelper::get_otp_expire_time();
+        $otpInfo=OtpHelper::setOtp($user->email,$user->id,$itemNew['reason'],$expires);   
+        try{
+            if($itemNew['reason']==1){//reset password
+                //return view('emails.otp_reset_password',['data'=>['otp'=>$otpInfo['otp']]]);
+                Mail::to($user->email)->send(new MailSender('emails.otp_reset_password',__('Your Reset Password Request'),['name'=>$user->first_name.' '.$user->last_name,'otp'=>$otpInfo['otp'],'expires'=>$expires]));
+            }  
+            else if($itemNew['reason']==2){//change password
+                Mail::to($user->email)->send(new MailSender('emails.otp_change_password',__('Your Change Password Request'),['name'=>$user->first_name.' '.$user->last_name,'otp'=>$otpInfo['otp'],'expires'=>$expires]));
+                
+            }  
+            else{//email verification            
+                Mail::to($user->email)->send(new MailSender('emails.otp_email_verify',__('Verify Your Email'),['name'=>$user->first_name.' '.$user->last_name,'otp'=>$otpInfo['otp'],'expires'=>$expires]));
+                
+            }  
+
+            
+            return response()->json(['error' => '','messages'=>__('Otp Sent'),'data' =>array()],200);
+        } catch (\Exception $ex) {            
+            return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
+        }  
+                
+        //return view('emails.otp_email_verify',['otp'=>$otpInfo['otp']]);
+        
         //return Mail::to('shaiful.islam@aclusterllc.com')->send(new MailSender('emails.otp_email_verify',"test subject",['otp'=>'123']));
         //return response()->json(['error'=>'VALIDATION_FAILED','errorMessage'=>__('validation.already_exists',['attribute'=>'username'])], 416);
     }

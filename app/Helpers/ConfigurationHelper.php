@@ -16,10 +16,11 @@
             foreach($results as $result){
                 self::$config[$result->purpose]=$result->config_value;
             }
+            
         }
         public static function get_otp_expire_time()
         {
-            return isset(self::$config[SYSTEM_CONFIGURATIONS_OTP_EXPIRE])?$config[SYSTEM_CONFIGURATIONS_OTP_EXPIRE]:10;
+            return isset(self::$config[SYSTEM_CONFIGURATIONS_OTP_EXPIRE])?self::$config[SYSTEM_CONFIGURATIONS_OTP_EXPIRE]:10;
         }
     }
     
