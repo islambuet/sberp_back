@@ -279,6 +279,62 @@ class UserController extends RootController
             return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
         } 
     }
+    public function verifyEmail(Request $request)
+    {   
+        $validation_rule=array();
+        $validation_rule['otp']=['required'];
+        $validation_rule['email']=['required', 'string', 'email'];        
+        $itemNew=$request->item;
+        $this->validateInputKeys($itemNew,array_keys($validation_rule));
+        $this->validateInputValues($itemNew,$validation_rule);
+        
+        
+
+        $user= User::where('email',$itemNew['email'])->first();
+        if(!$user){
+            return response()->json(['error'=>'EMAIL_NOT_EXISTS', 'messages'=>__('messages.email_not_exits')]); 
+        }
+        $itemId=$user->id;
+        $otpInfo=OtpHelper::checkOtp($itemNew['email'],$itemNew['otp'],2);
+
+        $itemOld=array();
+        $itemOld['email_verified_at']=$user->email_verified_at;
+
+        $itemNew=array();
+        $itemNew['email_verified_at']=Carbon::now();         
+        DB::beginTransaction();
+        try{
+
+            $dataHistory=array();
+            $dataHistory['table_name']=TABLE_USERS;
+            $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
+            $dataHistory['method']=__FUNCTION__;
+            
+            $itemNew['updated_by']=$this->user->id;
+            $itemNew['updated_at']=Carbon::now();
+            DB::table(TABLE_USERS)->where('id',$itemId)->update($itemNew);
+            $dataHistory['table_id']=$itemId;
+            $dataHistory['action']=DB_ACTION_EDIT;            
+            unset($itemNew['updated_by'],$itemNew['created_by'],$itemNew['created_at'],$itemNew['updated_at']);
+
+            $dataHistory['data_old']=json_encode($itemOld);
+            $dataHistory['data_new']=json_encode($itemNew);
+            $dataHistory['created_at']=Carbon::now();
+            $dataHistory['created_by']=$this->user->id;
+
+            $this->dBSaveHistory($dataHistory,TABLE_SYSTEM_HISTORIES);
+
+            OtpHelper::updateOtp($otpInfo);
+            
+            DB::commit();
+            return response()->json(['error' => '','messages'=>__('Email verified'),'data' =>array()],200);
+        } catch (\Exception $ex) {
+            print_r($ex);
+            // ELSE rollback & throw exception
+            DB::rollback();
+            return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
+        } 
+    }
     
     
 }

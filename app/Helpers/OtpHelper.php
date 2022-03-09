@@ -28,7 +28,7 @@
                     die();
                 }              
                 if($result->expires_at<Carbon::now()){
-                    response()->json(['error'=>'OTP_IEXPIRED','messages'=>__('validation.otp_expired')], 200)->send();
+                    response()->json(['error'=>'OTP_EXPIRED','messages'=>__('validation.otp_expired')], 200)->send();
                     die();
                 }
                 if(!(is_null($result->updated_at))){
