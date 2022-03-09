@@ -49,7 +49,7 @@ class UserController extends RootController
         DB::beginTransaction();
         try{
             $itemNew['password']=Hash::make($itemNew['password']);
-            $itemNew['created_by']=$this->user['id'];
+            $itemNew['created_by']=$this->user->id;
             $itemNew['created_at']=Carbon::now();            
             DB::table(TABLE_USERS)->insertGetId($itemNew);
             DB::commit();            
@@ -124,14 +124,13 @@ class UserController extends RootController
                         if(Auth::attempt(['email'=>$itemNew['email'],'password'=>$itemNew['password']]))
                         {
                             $user = Auth::user();
-                            $user['authToken'] = Auth::user()->createToken('ip:'.$request->server('REMOTE_ADDR').';User agent:'.$request->server('HTTP_USER_AGENT'))->plainTextToken;                              
-                            $response['data']=['authToken'=>$user['authToken']];
-                            return response()->json($response, 200);
+                            $user->authToken = $user->createToken('ip:'.$request->server('REMOTE_ADDR').';User agent:'.$request->server('HTTP_USER_AGENT'))->plainTextToken;                              
+                            return response()->json(['error' => '','messages'=>__('Logged in successfully'),'data' =>$user->toArray()],200);
                         }else
                         {
                             $response['error'] = 'INVALID_CREDENTIALS';
-                            $response['errorMessage'] = __('user.INVALID_CREDENTIALS');
-                            return response()->json($response, 401);
+                            $response['messages'] = __('user.INVALID_CREDENTIALS');
+                            return response()->json($response, 200);
                         }
 
                     }
@@ -215,30 +214,6 @@ class UserController extends RootController
             DB::rollback();
             return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
         } 
-
-
-
-
-        // if(!(Hash::check($itemNew['password_old'],$this->user['password']))){
-        //     return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('Incorrect Old Password')]);
-        // }
-
-        // $user = Auth::user();
-        // $user['authToken'] = Auth::user()->createToken('ip:'.$request->server('REMOTE_ADDR').';User agent:'.$request->server('HTTP_USER_AGENT'))->plainTextToken;                              
-        // $response['data']=['authToken'=>$user['authToken']];
-        // return response()->json($response, 200);
-
-
-
-        echo '<pre>';
-        print_r($otpInfo);
-        //print_r($this->user);
-        echo '</pre>';
-        die();
-
-
-
-        echo "hi";
     }
     
     

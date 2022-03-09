@@ -18,7 +18,7 @@ class SystemConfigurationsSeeder extends Seeder
         DB::table(TABLE_SYSTEM_CONFIGURATIONS)->insert([
             'purpose' => SYSTEM_CONFIGURATIONS_OTP_EXPIRE,
             'description' => 'Otp expires in seconds.',
-            'config_value' => 30,
+            'config_value' => 300,
             'created_by' => 1,
             'created_at'=>Carbon::now()
         ]);
