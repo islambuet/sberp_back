@@ -13,8 +13,8 @@ class UserHelper {
 		$user=UserHelper::getLoggedUser();
 		if(!$user){
 			$user=UserHelper::getGuestUser();
-		}
-		$user['userGroupRole']=TaskHelper::getUserGroupRole($user['user_group_id']);
+		}		
+		$user->userGroupRole=TaskHelper::getUserGroupRole($user->user_group_id);
 		return $user;
 	}
 	public static function getLoggedUser()
@@ -22,17 +22,17 @@ class UserHelper {
 		if (!UserHelper::$loggedUser) {
 			$user=Auth::guard('sanctum')->user();
 			if($user){				
-				UserHelper::$loggedUser=$user->toArray();
+				UserHelper::$loggedUser=$user;
 			}						
 		}
 		return UserHelper::$loggedUser;
 	}
 	public static function getGuestUser()
 	{
-		return array('id'=>-2,'user_group_id'=>3);
+		return (object) array('id'=>-2,'user_group_id'=>3);
 	}
 	public static function getSystemUser()
 	{
-		return array('id'=>-1,'user_group_id'=>2);
+		return (object) array('id'=>-1,'user_group_id'=>2);
 	}
 }

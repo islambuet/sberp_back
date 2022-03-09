@@ -22,7 +22,7 @@ class loggedUser
             return response()->json(['error' => "USER_SESSION_EXPIRED",'errorMessage'=>__('messages.user_session_expired')]);
         }  
         //bellow condition will not happen      
-        else if(is_null($user['email_verified_at'])){
+        else if(is_null($user->email_verified_at)){
             return response()->json(['error' => "EMAIL_NOT_VERIFIED",'errorMessage'=>__('messages.email_not_verified')]);
         }
         return $next($request);
