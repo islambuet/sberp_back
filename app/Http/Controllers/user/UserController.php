@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Mail;
 
 use Illuminate\Validation\Rule;
 
-// use App\Models\User;
+use App\Models\User;
 use App\Mail\MailSender;
 
 use Carbon\Carbon;
@@ -155,7 +155,7 @@ class UserController extends RootController
     public function ChangePassword(Request $request)
     {   
        
-        $save_token=TokenHelper::getSaveToken($request->save_token,$this->user['id']);
+        $save_token=TokenHelper::getSaveToken($request->save_token,$this->user->id);
         $itemId=$this->user->id;
         $validation_rule=array();
         $validation_rule['otp']=['required'];
@@ -165,7 +165,7 @@ class UserController extends RootController
         $itemNew=$request->item;
         $this->validateInputKeys($itemNew,array_keys($validation_rule));
         $this->validateInputValues($itemNew,$validation_rule);
-        $otpInfo=OtpHelper::checkOtp($this->user['email'],$itemNew['otp'],2);
+        $otpInfo=OtpHelper::checkOtp($this->user->email,$itemNew['otp'],2);
         
         $result = DB::table(TABLE_USERS)->select('password')->find($itemId);
         if(!(Hash::check($itemNew['password_old'],$result->password))){
@@ -174,10 +174,9 @@ class UserController extends RootController
         $itemOld=array();
         $itemOld['password']=$result->password;
 
-        
-
+        $password_new=$itemNew['password_new'];
         $itemNew=array();
-        $itemNew['password']=Hash::make($request->item['password_new']);       
+        $itemNew['password']=Hash::make($password_new);       
         DB::beginTransaction();
         try{
 
@@ -186,7 +185,7 @@ class UserController extends RootController
             $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
             $dataHistory['method']=__FUNCTION__;
             
-            $itemNew['updated_by']=$this->user['id'];
+            $itemNew['updated_by']=$this->user->id;
             $itemNew['updated_at']=Carbon::now();
             DB::table(TABLE_USERS)->where('id',$itemId)->update($itemNew);
             $dataHistory['table_id']=$itemId;
@@ -196,7 +195,7 @@ class UserController extends RootController
             $dataHistory['data_old']=json_encode($itemOld);
             $dataHistory['data_new']=json_encode($itemNew);
             $dataHistory['created_at']=Carbon::now();
-            $dataHistory['created_by']=$this->user['id'];
+            $dataHistory['created_by']=$this->user->id;
 
             $this->dBSaveHistory($dataHistory,TABLE_SYSTEM_HISTORIES);
             TokenHelper::updateSaveToken($save_token);
@@ -207,7 +206,70 @@ class UserController extends RootController
             //create new sessions
             $authToken = $this->user->createToken('ip:'.$request->server('REMOTE_ADDR').';User agent:'.$request->server('HTTP_USER_AGENT'))->plainTextToken;                                          
             DB::commit();
-            return response()->json(['error' => '','messages'=>__('Otp Sent'),'data' =>array('authToken'=>$authToken)],200);
+            return response()->json(['error' => '','messages'=>__('Password Changed'),'data' =>array('authToken'=>$authToken)],200);
+        } catch (\Exception $ex) {
+            print_r($ex);
+            // ELSE rollback & throw exception
+            DB::rollback();
+            return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
+        } 
+    }
+    public function recoverPassword(Request $request)
+    {   
+        $validation_rule=array();
+        $validation_rule['otp']=['required'];
+        $validation_rule['email']=['required', 'string', 'email'];
+        $validation_rule['password_new']=['required','min:3','max:255','alpha_dash'];
+        $itemNew=$request->item;
+        $this->validateInputKeys($itemNew,array_keys($validation_rule));
+        $this->validateInputValues($itemNew,$validation_rule);
+        
+        
+
+        $user= User::where('email',$itemNew['email'])->first();
+        if(!$user){
+            return response()->json(['error'=>'EMAIL_NOT_EXISTS', 'messages'=>__('messages.email_not_exits')]); 
+        }
+        $itemId=$user->id;
+        $otpInfo=OtpHelper::checkOtp($itemNew['email'],$itemNew['otp'],2);
+
+        $itemOld=array();
+        $itemOld['password']=$user->password;
+
+        $password_new=$itemNew['password_new'];
+        $itemNew=array();
+        $itemNew['password']=Hash::make($password_new);     
+        if(is_null($user->email_verified_at)){
+            $itemOld['email_verified_at']=$user->email_verified_at;
+            $itemNew['email_verified_at']=Carbon::now();
+        }  
+        DB::beginTransaction();
+        try{
+
+            $dataHistory=array();
+            $dataHistory['table_name']=TABLE_USERS;
+            $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
+            $dataHistory['method']=__FUNCTION__;
+            
+            $itemNew['updated_by']=$this->user->id;
+            $itemNew['updated_at']=Carbon::now();
+            DB::table(TABLE_USERS)->where('id',$itemId)->update($itemNew);
+            $dataHistory['table_id']=$itemId;
+            $dataHistory['action']=DB_ACTION_EDIT;            
+            unset($itemNew['updated_by'],$itemNew['created_by'],$itemNew['created_at'],$itemNew['updated_at']);
+
+            $dataHistory['data_old']=json_encode($itemOld);
+            $dataHistory['data_new']=json_encode($itemNew);
+            $dataHistory['created_at']=Carbon::now();
+            $dataHistory['created_by']=$this->user->id;
+
+            OtpHelper::updateOtp($otpInfo);
+            
+            //delete all sessions
+            $user->tokens()->delete();
+            
+            DB::commit();
+            return response()->json(['error' => '','messages'=>__('Password Reset done'),'data' =>array()],200);
         } catch (\Exception $ex) {
             print_r($ex);
             // ELSE rollback & throw exception

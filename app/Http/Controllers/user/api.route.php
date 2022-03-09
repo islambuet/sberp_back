@@ -9,8 +9,10 @@ $controllerClass=Controllers\user\UserController::class;
 
 Route::match(array('GET','POST'),$url.'/registration', [$controllerClass, 'registration']);
 Route::match(array('GET','POST'),$url.'/send-otp', [$controllerClass, 'sendOtp']);
+Route::match(array('GET','POST'),$url.'/recover-password', [$controllerClass, 'recoverPassword']);
 Route::post($url.'/login', [$controllerClass, 'login']);
 Route::match(array('GET','POST'),$url.'/logout', [$controllerClass, 'logout']);
+
 
 Route::middleware('logged-user')->group(function(){
     $url='user';
