@@ -4,7 +4,7 @@ namespace App\Http\Controllers\user;
 use App\Http\Controllers\RootController;
 
 // use App\Helpers\TaskHelper;
-// use App\Helpers\TokenHelper;
+use App\Helpers\TokenHelper;
 // use App\Helpers\UserHelper;
 // use App\Helpers\UploadHelper;
 use App\Helpers\OtpHelper;
@@ -152,8 +152,92 @@ class UserController extends RootController
 
 
     }
+    //otp reason =2
     public function ChangePassword(Request $request)
-    {
+    {   
+       
+        $save_token=TokenHelper::getSaveToken($request->save_token,$this->user['id']);
+        $itemId=$this->user->id;
+        $validation_rule=array();
+        $validation_rule['otp']=['required'];
+        $validation_rule['password_new']=['required','min:3','max:255','alpha_dash'];
+        $validation_rule['password_old']=['required','min:3','max:255','alpha_dash'];
+
+        $itemNew=$request->item;
+        $this->validateInputKeys($itemNew,array_keys($validation_rule));
+        $this->validateInputValues($itemNew,$validation_rule);
+        $otpInfo=OtpHelper::checkOtp($this->user['email'],$itemNew['otp'],2);
+        
+        $result = DB::table(TABLE_USERS)->select('password')->find($itemId);
+        if(!(Hash::check($itemNew['password_old'],$result->password))){
+            return response()->json(['error'=>'INVALID_CREDENTIALS', 'messages'=>__('messages.invalid_credentials')]);
+        }
+        $itemOld=array();
+        $itemOld['password']=$result->password;
+
+        
+
+        $itemNew=array();
+        $itemNew['password']=Hash::make($request->item['password_new']);       
+        DB::beginTransaction();
+        try{
+
+            $dataHistory=array();
+            $dataHistory['table_name']=TABLE_USERS;
+            $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
+            $dataHistory['method']=__FUNCTION__;
+            
+            $itemNew['updated_by']=$this->user['id'];
+            $itemNew['updated_at']=Carbon::now();
+            DB::table(TABLE_USERS)->where('id',$itemId)->update($itemNew);
+            $dataHistory['table_id']=$itemId;
+            $dataHistory['action']=DB_ACTION_EDIT;            
+            unset($itemNew['updated_by'],$itemNew['created_by'],$itemNew['created_at'],$itemNew['updated_at']);
+
+            $dataHistory['data_old']=json_encode($itemOld);
+            $dataHistory['data_new']=json_encode($itemNew);
+            $dataHistory['created_at']=Carbon::now();
+            $dataHistory['created_by']=$this->user['id'];
+
+            $this->dBSaveHistory($dataHistory,TABLE_SYSTEM_HISTORIES);
+            TokenHelper::updateSaveToken($save_token);
+            OtpHelper::updateOtp($otpInfo);
+            
+            //delete all sessions
+            $this->user->tokens()->delete();
+            //create new sessions
+            $authToken = $this->user->createToken('ip:'.$request->server('REMOTE_ADDR').';User agent:'.$request->server('HTTP_USER_AGENT'))->plainTextToken;                                          
+            DB::commit();
+            return response()->json(['error' => '','messages'=>__('Otp Sent'),'data' =>array('authToken'=>$authToken)],200);
+        } catch (\Exception $ex) {
+            print_r($ex);
+            // ELSE rollback & throw exception
+            DB::rollback();
+            return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
+        } 
+
+
+
+
+        // if(!(Hash::check($itemNew['password_old'],$this->user['password']))){
+        //     return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('Incorrect Old Password')]);
+        // }
+
+        // $user = Auth::user();
+        // $user['authToken'] = Auth::user()->createToken('ip:'.$request->server('REMOTE_ADDR').';User agent:'.$request->server('HTTP_USER_AGENT'))->plainTextToken;                              
+        // $response['data']=['authToken'=>$user['authToken']];
+        // return response()->json($response, 200);
+
+
+
+        echo '<pre>';
+        print_r($otpInfo);
+        //print_r($this->user);
+        echo '</pre>';
+        die();
+
+
+
         echo "hi";
     }
     

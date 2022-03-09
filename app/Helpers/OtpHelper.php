@@ -18,11 +18,35 @@
             $itemNew['id'] = DB::table(TABLE_USER_OTPS)->insertGetId($itemNew);
             return $itemNew;
         }
-        public static function getLastOtp($email){
+        //reason not cheacking
+        public static function checkOtp($email,$otp,$reason){
+            $result = DB::table(TABLE_USER_OTPS)->where('email', $email)->orderBy('id','desc')->first();
+            if($result)
+            {  
+                if($result->otp!= $otp){
+                    response()->json(['error'=>'OTP_MISMATCHED','messages'=>__('validation.otp_mismatched')], 200)->send();
+                    die();
+                }              
+                if($result->expires_at<Carbon::now()){
+                    response()->json(['error'=>'OTP_IEXPIRED','messages'=>__('validation.otp_expired')], 200)->send();
+                    die();
+                }
+                if(!(is_null($result->updated_at))){
+                    response()->json(['error'=>'OTP_USED','messages'=>__('validation.otp_already_used')], 200)->send();
+                    die();
+                }
+            }
+            else{
+                response()->json(['error'=>'OTP_INVALID','messages'=>__('validation.otp_not_found')], 200)->send();
+                die();
+            }
+            return $result;
 
         }
-        public static function updateOtp($id){
-
+        public static function updateOtp($otpInfo){
+            $itemNew=array();                             
+            $itemNew['updated_at']=Carbon::now();
+            DB::table(TABLE_USER_OTPS)->where('id',$otpInfo->id)->update($itemNew);
         }
         
     }
