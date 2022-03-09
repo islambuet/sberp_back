@@ -263,6 +263,8 @@ class UserController extends RootController
             $dataHistory['created_at']=Carbon::now();
             $dataHistory['created_by']=$this->user->id;
 
+            $this->dBSaveHistory($dataHistory,TABLE_SYSTEM_HISTORIES);
+
             OtpHelper::updateOtp($otpInfo);
             
             //delete all sessions
