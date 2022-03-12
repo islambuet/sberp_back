@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers as Controllers;
 
 $url='user';
-$controllerClass=Controllers\user\UserController::class;
+$controllerClass=Controllers\system\user\UserController::class;
 
 Route::match(array('GET','POST'),$url.'/registration', [$controllerClass, 'registration']);
 Route::match(array('GET','POST'),$url.'/send-otp', [$controllerClass, 'sendOtp']);
@@ -17,7 +17,7 @@ Route::match(array('GET','POST'),$url.'/logout', [$controllerClass, 'logout']);
 
 Route::middleware('logged-user')->group(function(){
     $url='user';
-    $controllerClass=Controllers\user\UserController::class;
+    $controllerClass=Controllers\sytem\user\UserController::class;
     //Route::post($url.'/profile-picture', [$controllerClass, 'profilePicture']);
     Route::post($url.'/change-password', [$controllerClass, 'ChangePassword']);
 });
