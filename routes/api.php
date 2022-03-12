@@ -23,8 +23,14 @@ use App\Http\Controllers as Controllers;
 
 $base_api_url=url('/').'/api';
 $paths=explode('/',substr(\Request::url(),strlen($base_api_url)));
-if(count($paths)>1){    
-    $folder=str_replace('-','_',app_path('Http/Controllers/'.$paths[1]));    
+if(count($paths)>1){   
+    if(is_numeric($paths[1]) && (count($paths)>2)){
+        $folder=str_replace('-','_',app_path('Http/Controllers/company/'.$paths[2]));        
+    } 
+    else{
+        $folder=str_replace('-','_',app_path('Http/Controllers/system/'.$paths[1]));        
+    }
+    //$folder=str_replace('-','_',app_path('Http/Controllers/system/'.$paths[1]));    
     if(is_dir($folder))
     {
         $directory = new RecursiveDirectoryIterator($folder);
