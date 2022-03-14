@@ -6,6 +6,7 @@ return [
     | Common API response Language Lines
     |--------------------------------------------------------------------------
     */
+    'ACCESS_DENIED'=>'You have no access of the request',
     'SERVER_ERROR'=>'Server Error',
     'registration_success'=>'Successfully Registered',
     'email_not_exits'=>'Email does not exits',

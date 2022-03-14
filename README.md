@@ -13,3 +13,4 @@ php artisan serve
 #php artisan make:migration create_user_groups
 #php artisan make:seeder UserGroupsSeeder
 #php artisan make:mail MailSender
+#php artisan db:seed --class=SystemTasksSeeder

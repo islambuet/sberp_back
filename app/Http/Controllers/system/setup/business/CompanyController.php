@@ -22,22 +22,19 @@ class CompanyController extends RootController
     public function __construct(Request $request)
     {
         parent::__construct($request);
-        //$this->permissions=TaskHelper::getPermissions((new \ReflectionClass(__CLASS__))->getShortName(),$this->user['userGroupRole']);        
+        $this->permissions=TaskHelper::getPermissions('setup/business/company',$this->user['userGroupRole']);        
     }
     public function initialize(Request $request)
-    {
-        // if ($this->permissions['action_0'] == 1){
-        //     $response=array();
-        //     $response['error'] = '';   
-                    
-        //     $response['permissions'] = $this->permissions;
-        //     $response['itemDefault']=TaskHelper::getTableDefaultItem(TABLE_USERS_TYPES);
-        //     $response['hidden_columns'] =TaskHelper::getHiddenColumns((new \ReflectionClass(__CLASS__))->getShortName(),$this->user['id']);            
-        //     return response()->json($response, 200);
+    {        
+        if ($this->permissions['action_0'] == 1){
+            $response=array();
+            $response['error'] = '';   
+            $response['permissions'] = $this->permissions;            
+            return response()->json($response, 200);
 
-        // }else{
-        //     return response()->json(['error'=>'ACCESS_DENIED','errorMessage'=>__('response.ACCESS_DENIED')], 401);
-        // }
+        }else{
+            return response()->json(['error'=>'ACCESS_DENIED','message'=>__('messages.ACCESS_DENIED')], 401);
+        }
     }
     public function getItems(Request $request)
     {
