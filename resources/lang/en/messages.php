@@ -7,6 +7,8 @@ return [
     |--------------------------------------------------------------------------
     */
     'ACCESS_DENIED'=>'You have no access of the request',
+    'ACCESS_DENIED_ADD'=>'You have no Add Access',
+    'ACCESS_DENIED_EDIT'=>'You have no Edit Access',
     'SERVER_ERROR'=>'Server Error',
     'registration_success'=>'Successfully Registered',
     'email_not_exits'=>'Email does not exits',

@@ -76,42 +76,29 @@ class CompanyController extends RootController
         }        
     }
     public function saveItem(Request $request)
-    {
-        $itemOld=array();
-        $language_current=App::currentLocale(); 
-        $language_available=config('app.language_available');
+    {   
+        $itemOld=array();    
         $save_token=TokenHelper::getSaveToken($request->save_token,$this->user['id']);
-       
         $itemId=$request->id?$request->id:0;
 
         
         $validation_rule=array();    
-        $validation_rule['name']=['required', 'string', 'max:255'];
-        $validation_rule['prefix']=['required', 'string', 'max:255'];
-        $validation_rule['ordering']=['numeric'];
-        $validation_rule['status']=['required',Rule::in([SYSTEM_STATUS_ACTIVE, SYSTEM_STATUS_INACTIVE])]; 
-       
-        $itemNew=$request->item;        
-        //validation start
-        //checking if any input there
-        if(!is_array($itemNew)){
-        
-            return response()->json(['error'=>'VALIDATION_FAILED','errorMessage'=>__('validation.input_not_found')], 416);
-        }
-        //checking if any invalid input
-        foreach($itemNew as $key=>$value){                  
-            if( !$key || (!in_array ($key,array_keys($validation_rule)))){                            
-                return response()->json(['error'=>'VALIDATION_FAILED','errorMessage'=>__('validation.input_not_valid',['attribute'=>$key])], 416);
-            }
-        }
-        if($itemId>0) {
+        $validation_rule['name']=['required', 'string','min:3', 'max:255']; 
+        $validation_rule['description']=['string']; 
+        $validation_rule['address']=['string']; 
+        $validation_rule['ordering']=['numeric']; 
+        $validation_rule['status']=[Rule::in([SYSTEM_STATUS_ACTIVE, SYSTEM_STATUS_INACTIVE])]; 
 
+        $itemNew=$request->item;
+        $this->validateInputKeys($itemNew,array_keys($validation_rule));
+
+        if($itemId>0) {
             if($this->permissions['action_2']!=1) {
-                return response()->json(['error'=>'ACCESS_DENIED','errorMessage'=>__('response.ACCESS_DENIED_EDIT')], 401);
+                return response()->json(['error'=>'ACCESS_DENIED','messages'=>__('messages.ACCESS_DENIED_EDIT')]);
             }        
-            $result = DB::table(TABLE_USERS_TYPES)->select(array_keys($validation_rule))->find($itemId);       
+            $result = DB::table(TABLE_COMPANIES)->select(array_keys($validation_rule))->find($itemId);       
             if(!$result){
-                return response()->json(['error'=>'VALIDATION_FAILED','errorMessage'=>__('validation.data_not_exists',['attribute'=>'id: '.$itemId])], 416);
+                return response()->json(['error'=>'ITEM_NOT_FOUND','messages'=>__('validation.data_not_found',['attribute'=>'id: '.$itemId])]);
             }
             $itemOld=$result;
             foreach($itemOld as $key=>$oldValue){
@@ -127,62 +114,62 @@ class CompanyController extends RootController
                     unset($itemOld->$key); //no change
                 }
             }
+            if(!$itemNew){
+                return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('validation.input_not_changed')]);
+            }
             
         } 
         else{
             if($this->permissions['action_1']!=1) {
-                return response()->json(['error'=>'ACCESS_DENIED','errorMessage'=>__('response.ACCESS_DENIED_ADD')], 401);
+                return response()->json(['error'=>'ACCESS_DENIED','messages'=>__('messages.ACCESS_DENIED_ADD')]);
             }  
         }
-        if(!$itemNew){
-            return response()->json(['error'=>'VALIDATION_FAILED','errorMessage'=>__('validation.input_not_changed')], 416);
-        }
-        $validator = Validator::make($itemNew, $validation_rule);
-        if ($validator->fails()) {
-            return response()->json(['error' => 'VALIDATION_FAILED','errorMessage' => $validator->errors()], 416);
-        }        
+        $this->validateInputValues($itemNew,$validation_rule);       
+        if(array_key_exists('name',$itemNew)){            
+            //no need !itemId because if name same already unset
+            $result = DB::table(TABLE_COMPANIES)->where('name', $itemNew['name'])->first();
+            if($result){
+                return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('validation.data_already_exists',['attribute'=>'name'])], 416);
+            }
+        }      
         //validation end
+
 
         DB::beginTransaction();
         try{
-
-            $dataHistory=array();
-            $dataHistory['table_name']=TABLE_USERS_TYPES;
-            $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
-            $dataHistory['method']=__FUNCTION__;
             if($itemId>0){
                 $itemNew['updated_by']=$this->user['id'];
                 $itemNew['updated_at']=Carbon::now();
-                DB::table(TABLE_USERS_TYPES)->where('id',$itemId)->update($itemNew);
+                DB::table(TABLE_COMPANIES)->where('id',$itemId)->update($itemNew);                
+                unset($itemNew['updated_by'],$itemNew['updated_at']);
+                
+                $dataHistory=array();
+                $dataHistory['table_name']=TABLE_COMPANIES;
+                $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
+                $dataHistory['method']=__FUNCTION__;
                 $dataHistory['table_id']=$itemId;
                 $dataHistory['action']=DB_ACTION_EDIT;
+                $dataHistory['data_old']=json_encode($itemOld);
+                $dataHistory['data_new']=json_encode($itemNew);
+                $dataHistory['created_at']=Carbon::now();
+                $dataHistory['created_by']=$this->user['id'];
+                $this->dBSaveHistory($dataHistory,TABLE_SYSTEM_HISTORIES);
             } else {
                 $itemNew['created_by']=$this->user['id'];
                 $itemNew['created_at']=Carbon::now();
-                $id = DB::table(TABLE_USERS_TYPES)->insertGetId($itemNew);
-                $itemNew['id']=$id;
-                $dataHistory['table_id']=$id;
-                $dataHistory['action']=DB_ACTION_ADD;
-            }
-            $returnItem=$itemNew;
-
-            unset($itemNew['updated_by'],$itemNew['created_by'],$itemNew['created_at'],$itemNew['updated_at']);
-
-            $dataHistory['data_old']=json_encode($itemOld);
-            $dataHistory['data_new']=json_encode($itemNew);
-            $dataHistory['created_at']=Carbon::now();
-            $dataHistory['created_by']=$this->user['id'];
-
-            $this->dBSaveHistory($dataHistory,TABLE_SYSTEM_HISTORIES);
+                $itemNew['id'] = DB::table(TABLE_COMPANIES)->insertGetId($itemNew);
+                $itemNew['branch_id']=DB::table(TABLE_COMPANY_BRANCHES)->insertGetId(['name'=>'Main Branch','company_id'=>$itemNew['id'],'created_by'=>$itemNew['created_by'],'created_at'=>$itemNew['created_at']]);
+                $itemNew['company_user_group_id']=DB::table(TABLE_COMPANY_USER_GROUPS)->insertGetId(['name'=>'Owner','company_id'=>$itemNew['id'],'created_by'=>$itemNew['created_by'],'created_at'=>$itemNew['created_at']]);                
+                unset($itemNew['created_by'],$itemNew['created_at']);
+            }            
             TokenHelper::updateSaveToken($save_token);
             DB::commit();
-            
-            return response()->json(['error' => '','item' =>$returnItem],200);
+            return response()->json(['error' => '','messages'=>__('Company Saved Successfully'),'data' =>$itemNew]);            
         } catch (\Exception $ex) {
             print_r($ex);
             // ELSE rollback & throw exception
             DB::rollback();
-            return response()->json(['error' => 'DB_SAVE_FAILED', 'errorMessage'=>__('response.DB_SAVE_FAILED')],408);
+            return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
         }
     }
 }

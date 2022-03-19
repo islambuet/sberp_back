@@ -22,6 +22,7 @@ class CreateCompanyUserGroups extends Migration
         Schema::create(TABLE_COMPANY_USER_GROUPS, function (Blueprint $table) {
             $table->increments('id');
             $table->string('name', 100);
+            $table->integer('company_id');
             $table->integer('ordering')->default(9999);
             $table->enum('status', [SYSTEM_STATUS_ACTIVE, SYSTEM_STATUS_INACTIVE, SYSTEM_STATUS_DELETE])->default('Active')->comment(SYSTEM_STATUS_ACTIVE, SYSTEM_STATUS_INACTIVE, SYSTEM_STATUS_DELETE);            
             foreach ($this->actions as $key => $action) {
