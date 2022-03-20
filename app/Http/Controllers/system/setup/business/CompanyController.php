@@ -22,7 +22,7 @@ class CompanyController extends RootController
     public function __construct(Request $request)
     {
         parent::__construct($request);
-        $this->permissions=TaskHelper::getPermissions('setup/business/company',$this->user['userGroupRole']);        
+        $this->permissions=TaskHelper::getPermissions('setup/business/company',$this->user->userGroupRole);        
     }
     public function initialize(Request $request)
     {        
@@ -36,26 +36,26 @@ class CompanyController extends RootController
             return response()->json(['error'=>'ACCESS_DENIED','message'=>__('messages.ACCESS_DENIED')], 401);
         }
     }
+    //per_page
+    //page
     public function getItems(Request $request)
     {
         if ($this->permissions['action_0'] == 1){
             $response=array();
             $response['error'] = '';
-                $perPage=$request->perPage?$request->perPage:2;
-            //$page=$request->page?$request->page:2;
-
-            $query=DB::table(TABLE_USERS_TYPES);
-            //$query->orderBy('ordering', 'ASC');
+            $per_page=$request->per_page?$request->per_page:20;
+            
+            $query=DB::table(TABLE_COMPANIES);
             $query->orderBy('id', 'DESC');
-            $query->where('status','!=',SYSTEM_STATUS_DELETE);
-
-            //$results=$query->paginate($perPage, ['*'], 'page',$page)->toArray();
-            $results=$query->paginate($perPage)->toArray();
-            $response['items'] = $results;
-            return response()->json($response, 200);
+            $query->where('status','!=',SYSTEM_STATUS_DELETE);            
+            $results=$query->paginate($per_page)->toArray();
+            //page numbers takes autometically
+            $response = $results;
+            $response['error'] = '';
+            return response()->json($response);
 
         }else{
-            return response()->json(['error'=>'ACCESS_DENIED','errorMessage'=>__('response.ACCESS_DENIED')], 401);
+            return response()->json(['error'=>'ACCESS_DENIED','messages'=>__('messages.ACCESS_DENIED')]);            
         }
     }
     public function getItem($itemId,Request $request)
@@ -64,15 +64,15 @@ class CompanyController extends RootController
             
             $response=array();
             $response['error'] = '';
-            $result = DB::table(TABLE_USERS_TYPES)->find($itemId);
+            $result = DB::table(TABLE_COMPANIES)->find($itemId);
             if(!$result){
-                return response()->json(['error'=>'VALIDATION_FAILED','errorMessage'=>__('validation.data_not_exists',['attribute'=>'id: '.$itemId])], 416);
+                return response()->json(['error'=>'ITEM_NOT_FOUND','messages'=>__('validation.data_not_found',['attribute'=>'id: '.$itemId])]);
             }
-            $response['item'] = $result;            
-            return response()->json($response, 200);
+            $response['data'] = $result;            
+            return response()->json($response);
 
         }else{
-            return response()->json(['error'=>'ACCESS_DENIED','errorMessage'=>__('response.ACCESS_DENIED')], 401);
+            return response()->json(['error'=>'ACCESS_DENIED','messages'=>__('messages.ACCESS_DENIED')]); 
         }        
     }
     public function saveItem(Request $request)
