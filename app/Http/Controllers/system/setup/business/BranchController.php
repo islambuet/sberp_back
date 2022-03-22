@@ -109,7 +109,7 @@ class BranchController extends RootController
 
         $itemNew=$request->item;
         $this->validateInputKeys($itemNew,array_keys($validation_rule));
-        die("Save item");
+        
         
 
         if($itemId>0) {
@@ -122,7 +122,17 @@ class BranchController extends RootController
             }
             $itemOld=$result;
             foreach($itemOld as $key=>$oldValue){
-                if(array_key_exists($key,$itemNew)){
+                if($key=='company_id'){
+                    if(array_key_exists($key,$itemNew)){
+                        if($itemNew[$key]!=$oldValue){
+                            return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('Company Cannot be Changed')]);
+                        }
+                    }
+                    else{
+                        $itemNew[$key]=$oldValue;
+                    }                    
+                }
+                else if(array_key_exists($key,$itemNew)){
                     if($itemOld->$key==$itemNew[$key]){
                         unset($itemNew[$key]);
                         unset($itemOld->$key);
@@ -134,7 +144,7 @@ class BranchController extends RootController
                     unset($itemOld->$key); //no change
                 }
             }
-            if(!$itemNew){
+            if(!(count($itemNew)>1)){
                 return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('validation.input_not_changed')]);
             }
             
@@ -145,28 +155,30 @@ class BranchController extends RootController
             }  
         }
         $this->validateInputValues($itemNew,$validation_rule);       
-        // if(array_key_exists('name',$itemNew)){            
-        //     //no need !itemId because if name same already unset
-        //     $result = DB::table(TABLE_COMPANY_BRANCHES)->where('name', $itemNew['name'])->where('comid',$itemNew['id'])->first();
-        //     if($result){
-        //         return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('validation.data_already_exists',['attribute'=>'name'])], 416);
-        //     }
-        // }      
-        //validation end
-
-        die();
-
-
+        if(array_key_exists('name',$itemNew)){            
+            //no need !itemId because if name same already unset
+            $result = DB::table(TABLE_COMPANY_BRANCHES)->where('name', $itemNew['name'])->where('company_id',$itemNew['company_id'])->first();
+            if($result){
+                return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('validation.data_already_exists',['attribute'=>'name'])]);
+            }
+        }     
+        if(array_key_exists('company_id',$itemNew)){            
+            //no need !itemId because if name same already unset
+            $result = DB::table(TABLE_COMPANIES)->where('id',$itemNew['company_id'])->first();
+            if(!$result){
+                return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('Invalid Company')]);
+            }
+        }   
         DB::beginTransaction();
         try{
             if($itemId>0){
                 $itemNew['updated_by']=$this->user['id'];
                 $itemNew['updated_at']=Carbon::now();
-                DB::table(TABLE_COMPANIES)->where('id',$itemId)->update($itemNew);                
+                DB::table(TABLE_COMPANY_BRANCHES)->where('id',$itemId)->update($itemNew);                
                 unset($itemNew['updated_by'],$itemNew['updated_at']);
                 
                 $dataHistory=array();
-                $dataHistory['table_name']=TABLE_COMPANIES;
+                $dataHistory['table_name']=TABLE_COMPANY_BRANCHES;
                 $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
                 $dataHistory['method']=__FUNCTION__;
                 $dataHistory['table_id']=$itemId;
@@ -179,14 +191,12 @@ class BranchController extends RootController
             } else {
                 $itemNew['created_by']=$this->user['id'];
                 $itemNew['created_at']=Carbon::now();
-                $itemNew['id'] = DB::table(TABLE_COMPANIES)->insertGetId($itemNew);
-                $itemNew['branch_id']=DB::table(TABLE_COMPANY_BRANCHES)->insertGetId(['name'=>'Main Branch','company_id'=>$itemNew['id'],'created_by'=>$itemNew['created_by'],'created_at'=>$itemNew['created_at']]);
-                $itemNew['company_user_group_id']=DB::table(TABLE_COMPANY_USER_GROUPS)->insertGetId(['name'=>'Owner','company_id'=>$itemNew['id'],'created_by'=>$itemNew['created_by'],'created_at'=>$itemNew['created_at']]);                
+                $itemNew['id'] = DB::table(TABLE_COMPANY_BRANCHES)->insertGetId($itemNew);                
                 unset($itemNew['created_by'],$itemNew['created_at']);
             }            
             TokenHelper::updateSaveToken($save_token);
             DB::commit();
-            return response()->json(['error' => '','messages'=>__('Company Saved Successfully'),'data' =>$itemNew]);            
+            return response()->json(['error' => '','messages'=>__('Branch Saved Successfully'),'data' =>$itemNew]);            
         } catch (\Exception $ex) {
             print_r($ex);
             // ELSE rollback & throw exception
