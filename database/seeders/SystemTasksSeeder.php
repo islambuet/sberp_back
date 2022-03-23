@@ -101,7 +101,7 @@ class SystemTasksSeeder extends Seeder
                 'name' => 'Company User Groups', 
                 'type' => 'TASK',
                 'parent' => 7,
-                'url' => 'setup/business/compnay-user-groups',                
+                'url' => 'setup/business/company-user-groups',                
                 'ordering' => 2,
                 'created_by' => 1,
                 'created_at'=>Carbon::now()
