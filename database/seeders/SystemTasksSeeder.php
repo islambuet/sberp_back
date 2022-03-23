@@ -92,7 +92,7 @@ class SystemTasksSeeder extends Seeder
                 'name' => 'Branches', 
                 'type' => 'TASK',
                 'parent' => 7,
-                'url' => 'setup/business/companies',                
+                'url' => 'setup/business/branches',                
                 'ordering' => 2,
                 'created_by' => 1,
                 'created_at'=>Carbon::now()
