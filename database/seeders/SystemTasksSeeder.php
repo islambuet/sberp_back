@@ -83,11 +83,29 @@ class SystemTasksSeeder extends Seeder
                 'name' => 'Company', 
                 'type' => 'TASK',
                 'parent' => 7,
-                'url' => 'setup/business/company',                
+                'url' => 'setup/business/companies',                
                 'ordering' => 2,
                 'created_by' => 1,
                 'created_at'=>Carbon::now()
-            ],                      
+            ],      
+            [
+                'name' => 'Branches', 
+                'type' => 'TASK',
+                'parent' => 7,
+                'url' => 'setup/business/companies',                
+                'ordering' => 2,
+                'created_by' => 1,
+                'created_at'=>Carbon::now()
+            ], 
+            [
+                'name' => 'Company User Groups', 
+                'type' => 'TASK',
+                'parent' => 7,
+                'url' => 'setup/business/compnay-user-groups',                
+                'ordering' => 2,
+                'created_by' => 1,
+                'created_at'=>Carbon::now()
+            ],                 
         ]);
     }
 }

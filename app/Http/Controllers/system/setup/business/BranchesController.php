@@ -16,13 +16,13 @@ use Illuminate\Validation\Rule;
 
 use Carbon\Carbon;
 
-class BranchController extends RootController
+class BranchesController extends RootController
 {
     public $permissions;
     public function __construct(Request $request)
     {
         parent::__construct($request);
-        $this->permissions=TaskHelper::getPermissions('setup/business/branch',$this->user->userGroupRole);        
+        $this->permissions=TaskHelper::getPermissions('setup/business/branches',$this->user->userGroupRole);        
     }
     public function initialize(Request $request)
     {        
