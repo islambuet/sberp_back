@@ -96,7 +96,7 @@ class CompanyUserGroupsController extends RootController
     }
     public function saveItem(Request $request)
     {   
-        die();
+        
         $itemOld=array();    
         $save_token=TokenHelper::getSaveToken($request->save_token,$this->user['id']);
         $itemId=$request->id?$request->id:0;
@@ -105,10 +105,6 @@ class CompanyUserGroupsController extends RootController
         $validation_rule=array();    
         $validation_rule['name']=['required', 'string','min:3', 'max:255']; 
         $validation_rule['company_id']=['required', 'numeric']; 
-        $validation_rule['description']=['string']; 
-        $validation_rule['address']=['string']; 
-        $validation_rule['long']=['numeric']; 
-        $validation_rule['lat']=['numeric']; 
         $validation_rule['ordering']=['numeric']; 
         $validation_rule['status']=[Rule::in([SYSTEM_STATUS_ACTIVE, SYSTEM_STATUS_INACTIVE])]; 
 
@@ -121,7 +117,7 @@ class CompanyUserGroupsController extends RootController
             if($this->permissions['action_2']!=1) {
                 return response()->json(['error'=>'ACCESS_DENIED','messages'=>__('messages.ACCESS_DENIED_EDIT')]);
             }        
-            $result = DB::table(TABLE_COMPANY_BRANCHES)->select(array_keys($validation_rule))->find($itemId);       
+            $result = DB::table(TABLE_COMPANY_USER_GROUPS)->select(array_keys($validation_rule))->find($itemId);       
             if(!$result){
                 return response()->json(['error'=>'ITEM_NOT_FOUND','messages'=>__('validation.data_not_found',['attribute'=>'id: '.$itemId])]);
             }
@@ -162,7 +158,7 @@ class CompanyUserGroupsController extends RootController
         $this->validateInputValues($itemNew,$validation_rule);       
         if(array_key_exists('name',$itemNew)){            
             //no need !itemId because if name same already unset
-            $result = DB::table(TABLE_COMPANY_BRANCHES)->where('name', $itemNew['name'])->where('company_id',$itemNew['company_id'])->first();
+            $result = DB::table(TABLE_COMPANY_USER_GROUPS)->where('name', $itemNew['name'])->where('company_id',$itemNew['company_id'])->first();
             if($result){
                 return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('validation.data_already_exists',['attribute'=>'name'])]);
             }
@@ -179,11 +175,11 @@ class CompanyUserGroupsController extends RootController
             if($itemId>0){
                 $itemNew['updated_by']=$this->user['id'];
                 $itemNew['updated_at']=Carbon::now();
-                DB::table(TABLE_COMPANY_BRANCHES)->where('id',$itemId)->update($itemNew);                
+                DB::table(TABLE_COMPANY_USER_GROUPS)->where('id',$itemId)->update($itemNew);                
                 unset($itemNew['updated_by'],$itemNew['updated_at']);
                 
                 $dataHistory=array();
-                $dataHistory['table_name']=TABLE_COMPANY_BRANCHES;
+                $dataHistory['table_name']=TABLE_COMPANY_USER_GROUPS;
                 $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
                 $dataHistory['method']=__FUNCTION__;
                 $dataHistory['table_id']=$itemId;
@@ -196,12 +192,12 @@ class CompanyUserGroupsController extends RootController
             } else {
                 $itemNew['created_by']=$this->user['id'];
                 $itemNew['created_at']=Carbon::now();
-                $itemNew['id'] = DB::table(TABLE_COMPANY_BRANCHES)->insertGetId($itemNew);                
+                $itemNew['id'] = DB::table(TABLE_COMPANY_USER_GROUPS)->insertGetId($itemNew);                
                 unset($itemNew['created_by'],$itemNew['created_at']);
             }            
             TokenHelper::updateSaveToken($save_token);
             DB::commit();
-            return response()->json(['error' => '','messages'=>__('Branch Saved Successfully'),'data' =>$itemNew]);            
+            return response()->json(['error' => '','messages'=>__('UserGroup Saved Successfully'),'data' =>$itemNew]);            
         } catch (\Exception $ex) {
             print_r($ex);
             // ELSE rollback & throw exception
