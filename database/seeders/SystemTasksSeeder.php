@@ -105,7 +105,16 @@ class SystemTasksSeeder extends Seeder
                 'ordering' => 2,
                 'created_by' => 1,
                 'created_at'=>Carbon::now()
-            ],                 
+            ],      
+            [
+                'name' => 'Company Users', 
+                'type' => 'TASK',
+                'parent' => 7,
+                'url' => 'setup/business/company-users',                
+                'ordering' => 2,
+                'created_by' => 1,
+                'created_at'=>Carbon::now()
+            ],            
         ]);
     }
 }
