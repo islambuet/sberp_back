@@ -162,11 +162,70 @@ class CompanyUsersController extends RootController
 
         }
 
+        $query=DB::table(TABLE_USERS.' as users');
+        $query->select('company_users.*','users.id as user_id');
+        $query->where('users.status',SYSTEM_STATUS_ACTIVE);
+        $query->whereIn('users.id',$user_ids);
+        $query->leftJoin(TABLE_COMPANY_USERS.' as company_users' , 'company_users.user_id', '=', 'users.id');
+        
+
+        //     $query->orderBy('companies.id', 'DESC');
+        //     $query->orderBy('user_groups.id', 'DESC');
+
+            // $query->join(TABLE_COMPANIES.' as companies' , 'user_groups.company_id', '=', 'companies.id');
+            
+            // $query->where('user_groups.status','!=',SYSTEM_STATUS_DELETE);            
+            // $query->where('companies.status','!=',SYSTEM_STATUS_DELETE);    
+            // if($company_id>0){
+            //     $query->where('companies.id',$company_id);    
+            // }        
+        $results=$query->get();
+        $user_infos=array();
+        foreach ($results as $result){
+            $user_infos[$result->user_id]=$result;
+        }
+        // echo '<pre>';
+        // print_r($user_infos);
+        // echo '</pre>';
+        // die();
+        //valdating if need to update/add and 
+        $changed=false;
+        foreach ($items as $index=>$item){
+            if(!$items[$index]['error'])
+            {
+                if(isset($user_infos[$item['user_id']])){
+                    if($user_infos[$item['user_id']]->id>0){
+                        if($user_infos[$item['user_id']]->status=SYSTEM_STATUS_ACTIVE){
+                            $items[$index]['error']='VALIDATION_FAILED';
+                            $items[$index]['messages']=__('User Already Added');
+                        }
+                        else{
+                            $changed=true;                            
+                        }
+                    }
+                    else{
+                        $changed=true;
+                    }
+                }
+                else{
+                    $items[$index]['error']='VALIDATION_FAILED';
+                    $items[$index]['messages']=__('User Not Found');
+                }
+            }
+        }
+
+
+        // echo '<pre>';
+        // print_r($user_infos);
+        // echo '</pre>';
+        // die();
+
         //valdation userids except superadmin and admin ug
 
         echo '<pre>';
         // print_r($company_user_group_ids);
         // print_r($company_brach_ids);
+        print_r($changed);
         print_r($items);
         echo '</pre>';
         die();

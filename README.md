@@ -14,3 +14,4 @@ php artisan serve
 #php artisan make:seeder UserGroupsSeeder
 #php artisan make:mail MailSender
 #php artisan db:seed --class=SystemTasksSeeder
+#php artisan migrate --path=/database/migrations/2022_03_24_190538_create_company_users.php
