@@ -95,9 +95,7 @@ class CompanyUsersController extends RootController
         }        
     }
     public function saveItem(Request $request)
-    {   
-        
-        $itemOld=array();    
+    {
         $save_token=TokenHelper::getSaveToken($request->save_token,$this->user['id']);
         $company_id=$request->company_id?$request->company_id:0;
         if(!($request->items && is_array($request->items))){
@@ -125,20 +123,47 @@ class CompanyUsersController extends RootController
         }
         $user_ids=array();
         $user_ids[0]=0;
-        foreach ($items as &$item){
-            echo count($item);
-            
-            if(!((count($item)==4) || $item['user_id'] || $item['company_user_group_id'] || $item['company_brach_id'] || $item['designtaion'])){
-                $item['error']='VALIDATION_FAILED';
-                $item['messages']=__('User Id Missing');                
+        foreach ($items as $index=>$item){
+            $items[$index]['error']='';
+            $items[$index]['messages']='';
+            //input vaidation            
+            if((count($item)!=4)|| !isset($item['user_id']) || !isset($item['company_user_group_id'])|| !isset($item['company_brach_id']) || !isset($item['designation'])){
+                $items[$index]['error']='VALIDATION_FAILED';
+                $items[$index]['messages']=__('Input Missing or Invalid Input');  
             }
-            // else{
+            //usergroup checking
+            if(!$items[$index]['error'])
+            {
                 
-            //     $user_ids[$item['user_id']]=$item['user_id'];
-            // }
-            // $item['error']='';
-            // $item['messages']='';
+                if(!(in_array($item['company_user_group_id'],$company_user_group_ids))){
+                    $items[$index]['error']='VALIDATION_FAILED';
+                    $items[$index]['messages']=__('Invalid User Group');  
+                }
+            }
+            //brach checking
+            if(!$items[$index]['error'])
+            {
+                if(!(is_array($item['company_brach_id'])) || (array_diff($item['company_brach_id'],$company_brach_ids))){
+                    $items[$index]['error']='VALIDATION_FAILED';
+                    $items[$index]['messages']=__('Invalid Branch');  
+                }                
+            }
+            //checking duplicate userid
+            if(!$items[$index]['error'])
+            {
+                if(isset($user_ids[$item['user_id']])){
+                    $items[$index]['error']='VALIDATION_FAILED';
+                    $items[$index]['messages']=__('Duplicate Entry');  
+                }                
+                else{
+                    $user_ids[$item['user_id']]=$item['user_id'];
+                }
+            }
+
         }
+
+        //valdation userids except superadmin and admin ug
+
         echo '<pre>';
         // print_r($company_user_group_ids);
         // print_r($company_brach_ids);
