@@ -94,7 +94,7 @@ class CompanyUsersController extends RootController
             return response()->json(['error'=>'ACCESS_DENIED','messages'=>__('messages.ACCESS_DENIED')]); 
         }        
     }
-    public function saveItem(Request $request)
+    public function saveItems(Request $request)
     {
         $save_token=TokenHelper::getSaveToken($request->save_token,$this->user['id']);
         $company_id=$request->company_id?$request->company_id:0;
@@ -186,7 +186,7 @@ class CompanyUsersController extends RootController
             {
                 if(isset($user_infos[$item['user_id']])){
                     if($user_infos[$item['user_id']]->id>0){
-                        if($user_infos[$item['user_id']]->status=SYSTEM_STATUS_ACTIVE){
+                        if($user_infos[$item['user_id']]->status==SYSTEM_STATUS_ACTIVE){
                             $items[$index]['error']='VALIDATION_FAILED';
                             $items[$index]['messages']=__('User Already Added');
                         }
@@ -221,26 +221,38 @@ class CompanyUsersController extends RootController
                         $itemNew['updated_at']=Carbon::now();
 
                         if($user_infos[$item['user_id']]->id>0){
-                            // $itemNew['updated_by']=$this->user['id'];
-                            // $itemNew['updated_at']=Carbon::now();
-                            // DB::table(TABLE_COMPANY_USER_GROUPS)->where('id',$itemId)->update($itemNew);                
+                            DB::table(TABLE_COMPANY_USERS)->where('id',$user_infos[$item['user_id']]->id)->update($itemNew);                                                          
                             // unset($itemNew['updated_by'],$itemNew['updated_at']);
                             
-                            // $dataHistory=array();
-                            // $dataHistory['table_name']=TABLE_COMPANY_USER_GROUPS;
-                            // $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
-                            // $dataHistory['method']=__FUNCTION__;
-                            // $dataHistory['table_id']=$itemId;
-                            // $dataHistory['action']=DB_ACTION_EDIT;
-                            // $dataHistory['data_old']=json_encode($itemOld);
-                            // $dataHistory['data_new']=json_encode($itemNew);
-                            // $dataHistory['created_at']=Carbon::now();
-                            // $dataHistory['created_by']=$this->user['id'];
-                            // $this->dBSaveHistory($dataHistory,TABLE_SYSTEM_HISTORIES);
+                            $dataHistory=array();
+                            $dataHistory['table_name']=TABLE_COMPANY_USERS;
+                            $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
+                            $dataHistory['method']=__FUNCTION__;
+                            $dataHistory['table_id']=$user_infos[$item['user_id']]->id;
+                            $dataHistory['company_id']=$company_id;
+                            $dataHistory['user_id']=$item['user_id'];
+                            $dataHistory['action']=DB_ACTION_EDIT;
+                            //TODO: Unset No change datas
+                            $itemOld=$user_infos[$item['user_id']];
+                            foreach ($itemOld as $key=>$value){
+                                if(!isset($itemNew[$key])){
+                                    unset($itemOld->$key);
+                                }
+                                else if($itemNew[$key]==$value){
+                                    unset($itemNew[$key]);
+                                    unset($itemOld->$key);
+                                }
+                            }
+                            $dataHistory['data_old']=json_encode($itemOld);
+                            $dataHistory['data_new']=json_encode($itemNew);
+                            $dataHistory['created_at']=Carbon::now();
+                            $dataHistory['created_by']=$this->user['id'];
+                            $this->dBSaveHistory($dataHistory,TABLE_COMPANY_USER_HISTORIES);
+                            $items[$index]['messages']=__('User Updated'); 
                         } else {
-                            DB::table(TABLE_COMPANY_USERS)->insertGetId($itemNew);                
+                            DB::table(TABLE_COMPANY_USERS)->insertGetId($itemNew); 
+                            $items[$index]['messages']=__('User Added');               
                         }
-                        //return response()->json(['error' => '','messages'=>__('UserGroup Saved Successfully'),'data' =>$itemNew]);            
                     } catch (\Exception $ex) {  
                                    
                         DB::rollback();

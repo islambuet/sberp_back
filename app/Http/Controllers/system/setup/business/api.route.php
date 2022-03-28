@@ -38,6 +38,6 @@ Route::middleware('logged-user')->group(function(){
     Route::match(array('GET','POST'),$url.'/initialize', [$controllerClass, 'initialize']);
     // Route::match(array('GET','POST'),$url.'/get-items', [$controllerClass, 'getItems']);
     // Route::match(array('GET','POST'),$url.'/get-item/{itemId}', [$controllerClass, 'getItem']);
-    Route::post($url.'/save-item', [$controllerClass, 'saveItem']);
+    Route::post($url.'/save-items', [$controllerClass, 'saveItems']);
 
 });
