@@ -45,16 +45,26 @@ class CompanyUsersController extends RootController
             $response['error'] = '';
             $per_page=$request->per_page?$request->per_page:20;
             $company_id=$request->company_id?$request->company_id:0;
-            
-            $query=DB::table(TABLE_COMPANY_USER_GROUPS.' as user_groups');
-            $query->select('user_groups.*', 'companies.name as company_name');
-            $query->orderBy('companies.id', 'DESC');
-            $query->orderBy('user_groups.id', 'DESC');
 
-            $query->join(TABLE_COMPANIES.' as companies' , 'user_groups.company_id', '=', 'companies.id');
+            $query=DB::table(TABLE_COMPANY_USERS.' as company_users');
+            $query->select('company_users.*');
+            $query->join(TABLE_COMPANIES.' as companies' , 'company_users.company_id', '=', 'companies.id');
+            $query->addSelect('companies.name as company_name');
+
+            $query->join(TABLE_COMPANY_USER_GROUPS.' as user_groups' , 'company_users.company_user_group_id', '=', 'user_groups.id');
+            $query->addSelect('user_groups.name as user_group_name');
+
+            $query->join(TABLE_USERS.' as users' , 'company_users.user_id', '=', 'users.id');
+            $query->addSelect('users.first_name','users.last_name');
             
+            $query->orderBy('companies.id', 'DESC');
+            $query->orderBy('users.id', 'DESC');
+           
+            $query->where('company_users.status','=',SYSTEM_STATUS_ACTIVE);    
+            $query->where('companies.status','!=',SYSTEM_STATUS_DELETE);
             $query->where('user_groups.status','!=',SYSTEM_STATUS_DELETE);            
-            $query->where('companies.status','!=',SYSTEM_STATUS_DELETE);    
+                
+            
             if($company_id>0){
                 $query->where('companies.id',$company_id);    
             }        
