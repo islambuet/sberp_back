@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 use App\Helpers\TaskHelper;
+use App\Helpers\CompanyTaskHelper;
 
 class UserHelper {
 
@@ -15,6 +16,7 @@ class UserHelper {
 			$user=UserHelper::getGuestUser();
 		}		
 		$user->userGroupRole=TaskHelper::getUserGroupRole($user->user_group_id);
+		$user->companyUserGroupRole=CompanyTaskHelper::getCompanyUserGroupRoleByUser($user->id);		
 		return $user;
 	}
 	public static function getLoggedUser()
