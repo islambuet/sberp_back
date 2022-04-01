@@ -27,21 +27,22 @@
             }
             return $role;
         }
-        // public static function getPermissions($url,$userGroupRole)//forApi
-        // {
-        //     $permissions = array();
-        //     $task=DB::table(TABLE_SYSTEM_TASKS)->where('url', $url)->select('id')->first();
-        //     $taskId=$task?$task->id:0;
-        //     for($i=0; $i<self::$MAX_MODULE_ACTIONS; $i++)
-        //     {
-        //         if(strpos($userGroupRole['action_'.$i], ','.$taskId.',')!==false){
-        //             $permissions['action_'.$i] = 1;
-        //         }
-        //         else
-        //         {
-        //             $permissions['action_'.$i]=0;
-        //         }
-        //     }
-        //     return $permissions;
-        // }
+        public static function getPermissions($companyId,$url,$companyUserGroupRole)//forApi
+        {
+            $permissions = array();
+            $task=DB::table(TABLE_COMPANY_TASKS)->where('url', $url)->select('id')->first();
+            $taskId=$task?$task->id:0;
+            for($i=0; $i<self::$MAX_MODULE_ACTIONS; $i++)
+            {
+                //if(strpos($userGroupRole['action_'.$i], ','.$taskId.',')!==false){
+                if(isset($companyUserGroupRole[$companyId])&& (strpos($companyUserGroupRole[$companyId]->{'action_'.$i}, ','.$taskId.',')!==false)){
+                    $permissions['action_'.$i] = 1;
+                }
+                else
+                {
+                    $permissions['action_'.$i]=0;
+                }
+            }
+            return $permissions;
+        }
     }

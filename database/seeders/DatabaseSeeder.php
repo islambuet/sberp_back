@@ -18,7 +18,8 @@ class DatabaseSeeder extends Seeder
             SystemConfigurationsSeeder::class,
             SystemTasksSeeder::class,                                    
             OccupationsSeeder::class,                                    
-            UsersSeeder::class,            
+            UsersSeeder::class,    
+            CompanyasksSeeder::class,        
         ]);
     }
 }
