@@ -44,6 +44,7 @@ class BranchesController extends RootController
             $response=array();
             $response['error'] = '';
             $per_page=$request->per_page?$request->per_page:20;
+            $company_id=$request->company_id?$request->company_id:0;
             
             $query=DB::table(TABLE_COMPANY_BRANCHES.' as branches');
             $query->select('branches.*', 'companies.name as company_name');
@@ -53,7 +54,10 @@ class BranchesController extends RootController
             $query->join(TABLE_COMPANIES.' as companies' , 'branches.company_id', '=', 'companies.id');
             
             $query->where('branches.status','!=',SYSTEM_STATUS_DELETE);            
-            $query->where('companies.status','!=',SYSTEM_STATUS_DELETE);            
+            $query->where('companies.status','!=',SYSTEM_STATUS_DELETE);    
+            if($company_id>0){
+                $query->where('companies.id',$company_id);    
+            }         
             $results=$query->paginate($per_page)->toArray();
             //page numbers takes autometically
             $response = $results;
