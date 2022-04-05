@@ -39,7 +39,7 @@ class BranchesController extends RootController
     }
     //per_page
     //page
-    public function getItems(Request $request)
+    public function getItems($companyId,Request $request)
     {
         if ($this->permissions['action_0'] == 1){
             $response=array();
@@ -54,7 +54,8 @@ class BranchesController extends RootController
             $query->join(TABLE_COMPANIES.' as companies' , 'branches.company_id', '=', 'companies.id');
             
             $query->where('branches.status','!=',SYSTEM_STATUS_DELETE);            
-            $query->where('companies.status','!=',SYSTEM_STATUS_DELETE);            
+            $query->where('companies.status','!=',SYSTEM_STATUS_DELETE); 
+            $query->where('branches.company_id',$companyId);  
             $results=$query->paginate($per_page)->toArray();
             //page numbers takes autometically
             $response = $results;
@@ -65,7 +66,7 @@ class BranchesController extends RootController
             return response()->json(['error'=>'ACCESS_DENIED','messages'=>__('messages.ACCESS_DENIED')]);            
         }
     }
-    public function getItem($itemId,Request $request)
+    public function getItem($companyId,$itemId,Request $request)
     {
         if ($this->permissions['action_0'] == 1){
             
@@ -79,6 +80,7 @@ class BranchesController extends RootController
             $query->where('branches.status','!=',SYSTEM_STATUS_DELETE);            
             $query->where('companies.status','!=',SYSTEM_STATUS_DELETE);
             $query->where('branches.id',$itemId);
+            $query->where('branches.company_id',$companyId);
 
             $result = $query->first();
             if(!$result){
@@ -91,16 +93,15 @@ class BranchesController extends RootController
             return response()->json(['error'=>'ACCESS_DENIED','messages'=>__('messages.ACCESS_DENIED')]); 
         }        
     }
-    public function saveItem(Request $request)
+    public function saveItem($companyId,Request $request)
     {   
         $itemOld=array();    
         $save_token=TokenHelper::getSaveToken($request->save_token,$this->user['id']);
         $itemId=$request->id?$request->id:0;
 
-        
         $validation_rule=array();    
         $validation_rule['name']=['required', 'string','min:3', 'max:255']; 
-        $validation_rule['company_id']=['required', 'numeric']; 
+        //$validation_rule['company_id']=['required', 'numeric']; 
         $validation_rule['description']=['string']; 
         $validation_rule['address']=['string']; 
         $validation_rule['long']=['numeric']; 
@@ -111,29 +112,17 @@ class BranchesController extends RootController
         $itemNew=$request->item;
         $this->validateInputKeys($itemNew,array_keys($validation_rule));
         
-        
-
         if($itemId>0) {
             if($this->permissions['action_2']!=1) {
                 return response()->json(['error'=>'ACCESS_DENIED','messages'=>__('messages.ACCESS_DENIED_EDIT')]);
             }        
-            $result = DB::table(TABLE_COMPANY_BRANCHES)->select(array_keys($validation_rule))->find($itemId);       
+            $result = DB::table(TABLE_COMPANY_BRANCHES)->select(array_keys($validation_rule))->where('company_id',$companyId)->find($itemId);               
             if(!$result){
                 return response()->json(['error'=>'ITEM_NOT_FOUND','messages'=>__('validation.data_not_found',['attribute'=>'id: '.$itemId])]);
             }
             $itemOld=$result;
             foreach($itemOld as $key=>$oldValue){
-                if($key=='company_id'){
-                    if(array_key_exists($key,$itemNew)){
-                        if($itemNew[$key]!=$oldValue){
-                            return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('Company Cannot be Changed')]);
-                        }
-                    }
-                    else{
-                        $itemNew[$key]=$oldValue;
-                    }                    
-                }
-                else if(array_key_exists($key,$itemNew)){
+                if(array_key_exists($key,$itemNew)){
                     if($itemOld->$key==$itemNew[$key]){
                         unset($itemNew[$key]);
                         unset($itemOld->$key);
@@ -145,7 +134,7 @@ class BranchesController extends RootController
                     unset($itemOld->$key); //no change
                 }
             }
-            if(!(count($itemNew)>1)){
+            if(!(count($itemNew)>0)){
                 return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('validation.input_not_changed')]);
             }
             
@@ -158,18 +147,11 @@ class BranchesController extends RootController
         $this->validateInputValues($itemNew,$validation_rule);       
         if(array_key_exists('name',$itemNew)){            
             //no need !itemId because if name same already unset
-            $result = DB::table(TABLE_COMPANY_BRANCHES)->where('name', $itemNew['name'])->where('company_id',$itemNew['company_id'])->first();
+            $result = DB::table(TABLE_COMPANY_BRANCHES)->where('name', $itemNew['name'])->where('company_id',$companyId)->first();
             if($result){
                 return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('validation.data_already_exists',['attribute'=>'name'])]);
             }
-        }     
-        if(array_key_exists('company_id',$itemNew)){            
-            //no need !itemId because if name same already unset
-            $result = DB::table(TABLE_COMPANIES)->where('id',$itemNew['company_id'])->first();
-            if(!$result){
-                return response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('Invalid Company')]);
-            }
-        }   
+        }
         DB::beginTransaction();
         try{
             if($itemId>0){
@@ -190,10 +172,12 @@ class BranchesController extends RootController
                 $dataHistory['created_by']=$this->user['id'];
                 $this->dBSaveHistory($dataHistory,TABLE_SYSTEM_HISTORIES);
             } else {
+                $itemNew['company_id']=$companyId;
                 $itemNew['created_by']=$this->user['id'];
                 $itemNew['created_at']=Carbon::now();
                 $itemNew['id'] = DB::table(TABLE_COMPANY_BRANCHES)->insertGetId($itemNew);                
                 unset($itemNew['created_by'],$itemNew['created_at']);
+                //TODO assign user to that company
             }            
             TokenHelper::updateSaveToken($save_token);
             DB::commit();
