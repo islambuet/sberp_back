@@ -4,6 +4,7 @@ namespace App\Http\Controllers\system\user;
 use App\Http\Controllers\RootController;
 
 use App\Helpers\TaskHelper;
+use App\Helpers\CompanyTaskHelper;
 use App\Helpers\TokenHelper;
 // use App\Helpers\UserHelper;
 // use App\Helpers\UploadHelper;
@@ -348,5 +349,9 @@ class UserController extends RootController
         $query->addselect('companies.name as company_name');
         $results=$query->get();
         return response()->json(['error' => '','data'=>$results]);
+    }
+    public function getCompanyMenu($companyId,Request $request){
+        return response()->json(['error' => '','data'=>CompanyTaskHelper::getCompanyUserGroupMenu($companyId,$this->user->companyUserGroupRole)]);
+        
     }
 }

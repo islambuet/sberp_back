@@ -22,5 +22,6 @@ Route::middleware('logged-user')->group(function(){
     Route::post($url.'/change-password', [$controllerClass, 'ChangePassword']);
     Route::match(array('GET','POST'),$url.'/get-default-menu', [$controllerClass, 'getDefaultMenu']);
     Route::match(array('GET','POST'),$url.'/get-companies', [$controllerClass, 'getCompanies']);
+    Route::match(array('GET','POST'),$url.'/get-company-menu/{companyId}', [$controllerClass, 'getCompanyMenu']);
 });
 

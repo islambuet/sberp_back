@@ -45,4 +45,78 @@
             }
             return $permissions;
         }
+        public static function getCompanyUserGroupMenu($companyId,$companyUserGroupRole)
+        {
+            $tree=array();
+            $max_level=1;
+            if(isset($companyUserGroupRole[$companyId])){
+                $userGroupRole=$companyUserGroupRole[$companyId];
+                
+                $role=array();
+                if(strlen($userGroupRole->action_0)>1)
+                {
+                    $role=explode(',',trim($userGroupRole->action_0,','));
+                }
+
+                $tasks=DB::table(TABLE_COMPANY_TASKS)
+                    ->select('id','name','type','parent','type','url','ordering','status')
+                    ->orderBy('ordering', 'ASC')
+                    ->where('status',SYSTEM_STATUS_ACTIVE)
+                    ->get()->toArray();
+                $children=array();
+                foreach($tasks as $task)
+                {
+                    $task=(array)$task;
+                    if($task['type']=='TASK')
+                    {
+                        if(in_array($task['id'],$role))
+                        {
+                            $children[$task['parent']][$task['id']]=$task;
+                        }
+                    }
+                    else
+                    {
+                        $children[$task['parent']][$task['id']]=$task;
+                    }
+                }
+                if(isset($children[0]))
+                {
+                    $tree = self::getCompanyUserGroupSubMenu(1,$max_level,'','',$children, $children[0]);
+                }                
+            }            
+            return array('max_level'=>$max_level,'menu'=>$tree);
+        }
+        public static function getCompanyUserGroupSubMenu($level,&$max_level,$parent_class,$prefix,$list, $parent)
+        {
+            if($level>$max_level)
+            {
+                $max_level=$level;
+            }
+            $tree = array();
+            foreach ($parent as $key=>$element)
+            {
+                $element['level']=$level;
+                $element['parent_class']=$parent_class;
+                $element['prefix,']=$prefix;
+                //$tree[] = $element;
+                if(isset($list[$element['id']]))
+                {
+                    $children=self::getCompanyUserGroupSubMenu($level+1,$max_level,$parent_class.' parent_'.$element['id'],$prefix.'- ',$list, $list[$element['id']]);
+                    if($children)
+                    {
+                        $element['children'] = $children;
+                        $tree[] = $element;
+                    }
+                }
+                else
+                {
+                    if($element['type']=='TASK')
+                    {
+                        $tree[] = $element;
+                    }
+                }
+            }
+            return $tree;
+
+        }
     }
