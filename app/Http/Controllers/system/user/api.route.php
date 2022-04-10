@@ -21,5 +21,6 @@ Route::middleware('logged-user')->group(function(){
     //Route::post($url.'/profile-picture', [$controllerClass, 'profilePicture']);
     Route::post($url.'/change-password', [$controllerClass, 'ChangePassword']);
     Route::match(array('GET','POST'),$url.'/get-default-menu', [$controllerClass, 'getDefaultMenu']);
+    Route::match(array('GET','POST'),$url.'/get-companies', [$controllerClass, 'getCompanies']);
 });
 

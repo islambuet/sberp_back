@@ -338,6 +338,15 @@ class UserController extends RootController
     public function getDefaultMenu(Request $request){
         return response()->json(['error' => '','data'=>TaskHelper::getUserGroupMenu($this->user->userGroupRole)]);
     }
-    
-    
+    public function getCompanies(Request $request){
+        $query=DB::table(TABLE_COMPANY_USERS.' as company_users');
+        $query->where('company_users.status','=',SYSTEM_STATUS_ACTIVE);    
+        $query->where('company_users.user_id','=',$this->user->id);
+        $query->select('company_users.company_id');
+        $query->join(TABLE_COMPANIES.' as companies' , 'company_users.company_id', '=', 'companies.id');
+        $query->where('companies.status','=',SYSTEM_STATUS_ACTIVE); 
+        $query->addselect('companies.name as company_name');
+        $results=$query->get();
+        return response()->json(['error' => '','data'=>$results]);
+    }
 }
