@@ -17,8 +17,9 @@ Route::match(array('GET','POST'),$url.'/logout', [$controllerClass, 'logout']);
 
 Route::middleware('logged-user')->group(function(){
     $url='user';
-    $controllerClass=Controllers\sytem\user\UserController::class;
+    $controllerClass=Controllers\system\user\UserController::class;
     //Route::post($url.'/profile-picture', [$controllerClass, 'profilePicture']);
     Route::post($url.'/change-password', [$controllerClass, 'ChangePassword']);
+    Route::match(array('GET','POST'),$url.'/get-default-menu', [$controllerClass, 'getDefaultMenu']);
 });
 

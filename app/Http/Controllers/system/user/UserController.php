@@ -3,7 +3,7 @@ namespace App\Http\Controllers\system\user;
 
 use App\Http\Controllers\RootController;
 
-// use App\Helpers\TaskHelper;
+use App\Helpers\TaskHelper;
 use App\Helpers\TokenHelper;
 // use App\Helpers\UserHelper;
 // use App\Helpers\UploadHelper;
@@ -334,6 +334,9 @@ class UserController extends RootController
             DB::rollback();
             return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
         } 
+    }
+    public function getDefaultMenu(Request $request){
+        return response()->json(['error' => '','data'=>TaskHelper::getUserGroupMenu($this->user->userGroupRole)]);
     }
     
     
