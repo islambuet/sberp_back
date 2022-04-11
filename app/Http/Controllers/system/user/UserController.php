@@ -32,8 +32,8 @@ class UserController extends RootController
     {
         //accepted inputs and validation rule
         $validation_rule = [];
-        $validation_rule['first_name'] = ['required', 'string', 'min:5', 'max:255'];
-        $validation_rule['last_name'] = ['required', 'string', 'min:5', 'max:255'];
+        $validation_rule['first_name'] = ['required', 'string', 'min:2', 'max:255'];
+        $validation_rule['last_name'] = ['required', 'string', 'min:2', 'max:255'];
         $validation_rule['email'] = ['required', 'string', 'email', 'max:255', 'unique:' . TABLE_USERS];
         $validation_rule['password'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
 
@@ -181,6 +181,9 @@ class UserController extends RootController
         }
 
         $otpInfo = OtpHelper::checkOtp($this->user->email, $itemNew['otp'], 2);
+        if(isset($otpInfo['error'])&& strlen($otpInfo['error'])>0){
+            return response()->json($otpInfo);
+        }
 
         $result = DB::table(TABLE_USERS)->select('password')->find($itemId);
         if (!(Hash::check($itemNew['password_old'], $result->password))) {
@@ -254,6 +257,9 @@ class UserController extends RootController
         }
         $itemId = $user->id;
         $otpInfo = OtpHelper::checkOtp($itemNew['email'], $itemNew['otp'], 2);
+        if(isset($otpInfo['error'])&& strlen($otpInfo['error'])>0){
+            return response()->json($otpInfo);
+        }
 
         $itemOld = [];
         $itemOld['password'] = $user->password;
@@ -313,7 +319,7 @@ class UserController extends RootController
         if(isset($validation['error'])&& strlen($validation['error'])>0){
             return response()->json($validation);
         }
-        
+
         $validation = $this->validateInputValues($itemNew, $validation_rule);
         if(isset($validation['error'])&& strlen($validation['error'])>0){
             return response()->json($validation);
@@ -325,6 +331,9 @@ class UserController extends RootController
         }
         $itemId = $user->id;
         $otpInfo = OtpHelper::checkOtp($itemNew['email'], $itemNew['otp'], 2);
+        if(isset($otpInfo['error'])&& strlen($otpInfo['error'])>0){
+            return response()->json($otpInfo);
+        }
 
         $itemOld = [];
         $itemOld['email_verified_at'] = $user->email_verified_at;

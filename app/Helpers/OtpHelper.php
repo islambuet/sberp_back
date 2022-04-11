@@ -23,22 +23,18 @@
             $result = DB::table(TABLE_USER_OTPS)->where('email', $email)->orderBy('id','desc')->first();
             if($result)
             {  
-                if($result->otp!= $otp){
-                    response()->json(['error'=>'OTP_MISMATCHED','messages'=>__('validation.otp_mismatched')], 200)->send();
-                    die();
+                if($result->otp!= $otp){                    
+                    return ['error'=>'OTP_MISMATCHED','messages'=>__('validation.otp_mismatched')];
                 }              
                 if($result->expires_at<Carbon::now()){
-                    response()->json(['error'=>'OTP_EXPIRED','messages'=>__('validation.otp_expired')], 200)->send();
-                    die();
+                    return ['error'=>'OTP_EXPIRED','messages'=>__('validation.otp_expired')];                    
                 }
                 if(!(is_null($result->updated_at))){
-                    response()->json(['error'=>'OTP_USED','messages'=>__('validation.otp_already_used')], 200)->send();
-                    die();
+                    return ['error'=>'OTP_USED','messages'=>__('validation.otp_already_used')];
                 }
             }
             else{
-                response()->json(['error'=>'OTP_INVALID','messages'=>__('validation.otp_not_found')], 200)->send();
-                die();
+                return ['error'=>'OTP_INVALID','messages'=>__('validation.otp_not_found')];
             }
             return $result;
 
