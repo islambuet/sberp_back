@@ -1,32 +1,26 @@
 <?php
 namespace App\Http\Controllers\system\user;
 
-use App\Http\Controllers\RootController;
-
-use App\Helpers\TaskHelper;
 use App\Helpers\CompanyTaskHelper;
-use App\Helpers\TokenHelper;
+use App\Helpers\ConfigurationHelper;
+use App\Helpers\OtpHelper;
+use App\Helpers\TaskHelper;
 // use App\Helpers\UserHelper;
 // use App\Helpers\UploadHelper;
-use App\Helpers\OtpHelper;
-use App\Helpers\ConfigurationHelper;
-
-use Illuminate\Http\Request;
-
-
-// use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\DB;
-// use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-
-use Illuminate\Validation\Rule;
-
-use App\Models\User;
+use App\Helpers\TokenHelper;
+use App\Http\Controllers\RootController;
 use App\Mail\MailSender;
 
+// use Illuminate\Support\Facades\App;
+use App\Models\User;
+// use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 
 class UserController extends RootController
 {
@@ -37,321 +31,362 @@ class UserController extends RootController
     public function registration(Request $request)
     {
         //accepted inputs and validation rule
-        $validation_rule=array();    
-        $validation_rule['first_name']=['required', 'string','min:5','max:255'];
-        $validation_rule['last_name']=['required', 'string','min:5','max:255'];
-        $validation_rule['email']=['required', 'string', 'email', 'max:255', 'unique:'.TABLE_USERS];
-        $validation_rule['password']=['required','min:3','max:255','alpha_dash'];
+        $validation_rule = [];
+        $validation_rule['first_name'] = ['required', 'string', 'min:5', 'max:255'];
+        $validation_rule['last_name'] = ['required', 'string', 'min:5', 'max:255'];
+        $validation_rule['email'] = ['required', 'string', 'email', 'max:255', 'unique:' . TABLE_USERS];
+        $validation_rule['password'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
 
-        $itemNew=$request->item;
-        $this->validateInputKeys($itemNew,array_keys($validation_rule));
-        $this->validateInputValues($itemNew,$validation_rule);
+        $itemNew = $request->item;
+        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (count($validatedInputKeys) > 0) {
+            return $validatedInputKeys;
+        }
+        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
+        if (count($validatedInputValues) > 0) {
+            return $validatedInputValues;
+        }
 
         DB::beginTransaction();
-        try{
-            $itemNew['password']=Hash::make($itemNew['password']);
-            $itemNew['created_by']=$this->user->id;
-            $itemNew['created_at']=Carbon::now();            
+        try {
+            $itemNew['password'] = Hash::make($itemNew['password']);
+            $itemNew['created_by'] = $this->user->id;
+            $itemNew['created_at'] = Carbon::now();
             DB::table(TABLE_USERS)->insertGetId($itemNew);
-            DB::commit();            
-            return response()->json(['error' => '','messages'=>__('messages.registration_success'),'data' =>array()],200);
+            DB::commit();
+
+            return response()->json(['error' => '', 'messages' => __('messages.registration_success'), 'data' => []], 200);
         } catch (\Exception $ex) {
             //print_r($ex);
             // ELSE rollback & throw exception
             DB::rollback();
-            return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
-        }  
+
+            return response()->json(['error' => 'SERVER_ERROR', 'messages' => __('messages.SERVER_ERROR')]);
+        }
     }
     public function sendOtp(Request $request)
     {
-        
+
         //accepted inputs and validation rule
-        $validation_rule=array();            
-        $validation_rule['email']=['required', 'string', 'email'];
-        $validation_rule['reason']=['required',Rule::in([0, 1,2])]; 
-        $itemNew=$request->item;
-        $this->validateInputKeys($itemNew,array_keys($validation_rule));
-        $this->validateInputValues($itemNew,$validation_rule);
+        $validation_rule = [];
+        $validation_rule['email'] = ['required', 'string', 'email'];
+        $validation_rule['reason'] = ['required', Rule::in([0, 1, 2])];
+        $itemNew = $request->item;
+        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (count($validatedInputKeys) > 0) {
+            return $validatedInputKeys;
+        }
 
-        $user = DB::table(TABLE_USERS)->select('*')->where('email',$itemNew['email'])->first();            
-        if(!$user){
-            return response()->json(['error'=>'EMAIL_NOT_EXISTS', 'messages'=>__('messages.email_not_exits')]);
-        } 
-        $expires=ConfigurationHelper::get_otp_expire_time();
-        $otpInfo=OtpHelper::setOtp($user->email,$user->id,$itemNew['reason'],$expires);   
-        try{
-            if($itemNew['reason']==1){//reset password
+        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
+        if (count($validatedInputValues) > 0) {
+            return $validatedInputValues;
+        }
+
+        $user = DB::table(TABLE_USERS)->select('*')->where('email', $itemNew['email'])->first();
+        if (!$user) {
+            return response()->json(['error' => 'EMAIL_NOT_EXISTS', 'messages' => __('messages.email_not_exits')]);
+        }
+        $expires = ConfigurationHelper::get_otp_expire_time();
+        $otpInfo = OtpHelper::setOtp($user->email, $user->id, $itemNew['reason'], $expires);
+        try {
+            if ($itemNew['reason'] == 1) { //reset password
                 //return view('emails.otp_reset_password',['data'=>['otp'=>$otpInfo['otp']]]);
-                Mail::to($user->email)->send(new MailSender('emails.otp_reset_password',__('Your Reset Password Request'),['name'=>$user->first_name.' '.$user->last_name,'otp'=>$otpInfo['otp'],'expires'=>$expires]));
-            }  
-            else if($itemNew['reason']==2){//change password
-                Mail::to($user->email)->send(new MailSender('emails.otp_change_password',__('Your Change Password Request'),['name'=>$user->first_name.' '.$user->last_name,'otp'=>$otpInfo['otp'],'expires'=>$expires]));
-                
-            }  
-            else{//email verification            
-                Mail::to($user->email)->send(new MailSender('emails.otp_email_verify',__('Verify Your Email'),['name'=>$user->first_name.' '.$user->last_name,'otp'=>$otpInfo['otp'],'expires'=>$expires]));
-                
-            }  
+                Mail::to($user->email)->send(new MailSender('emails.otp_reset_password', __('Your Reset Password Request'), ['name' => $user->first_name . ' ' . $user->last_name, 'otp' => $otpInfo['otp'], 'expires' => $expires]));
+            } else if ($itemNew['reason'] == 2) { //change password
+                Mail::to($user->email)->send(new MailSender('emails.otp_change_password', __('Your Change Password Request'), ['name' => $user->first_name . ' ' . $user->last_name, 'otp' => $otpInfo['otp'], 'expires' => $expires]));
 
-            
-            return response()->json(['error' => '','messages'=>__('Otp Sent'),'data' =>array()],200);
-        } catch (\Exception $ex) {            
-            return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
-        }  
-                
+            } else { //email verification
+                Mail::to($user->email)->send(new MailSender('emails.otp_email_verify', __('Verify Your Email'), ['name' => $user->first_name . ' ' . $user->last_name, 'otp' => $otpInfo['otp'], 'expires' => $expires]));
+
+            }
+
+            return response()->json(['error' => '', 'messages' => __('Otp Sent'), 'data' => []], 200);
+        } catch (\Exception $ex) {
+            return response()->json(['error' => 'SERVER_ERROR', 'messages' => __('messages.SERVER_ERROR')]);
+        }
+
         //return view('emails.otp_email_verify',['otp'=>$otpInfo['otp']]);
-        
+
         //return Mail::to('shaiful.islam@aclusterllc.com')->send(new MailSender('emails.otp_email_verify',"test subject",['otp'=>'123']));
         //return response()->json(['error'=>'VALIDATION_FAILED','errorMessage'=>__('validation.already_exists',['attribute'=>'username'])], 416);
     }
     public function login(Request $request)
     {
         //accepted inputs and validation rule
-        $validation_rule=array();
-        $validation_rule['email']=['required', 'string', 'email', 'max:255'];
-        $validation_rule['password']=['required','min:3','max:255','alpha_dash'];
+        $validation_rule = [];
+        $validation_rule['email'] = ['required', 'string', 'email', 'max:255'];
+        $validation_rule['password'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
 
-        $itemNew=$request->item;
-        $this->validateInputKeys($itemNew,array_keys($validation_rule));
-        $this->validateInputValues($itemNew,$validation_rule);
-        $userFound = DB::table(TABLE_USERS)->select('email','password','email_verified_at','status')->where('email',$itemNew['email'])->first();            
-        if($userFound){
-            if($userFound->status = SYSTEM_STATUS_ACTIVE){
-                if(is_null($userFound->email_verified_at)){
-                    return response()->json(['error'=>'EMAIL_NOT_VERIFIED', 'messages'=>__('messages.email_not_verified')]);
-                }
-                else{
-                    if(Hash::check($itemNew['password'], $userFound->password)){
-                        if(Auth::attempt(['email'=>$itemNew['email'],'password'=>$itemNew['password']]))
-                        {
+        $itemNew = $request->item;
+        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (count($validatedInputKeys) > 0) {
+            return $validatedInputKeys;
+        }
+
+        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
+        if (count($validatedInputValues) > 0) {
+            return $validatedInputValues;
+        }
+        $userFound = DB::table(TABLE_USERS)->select('email', 'password', 'email_verified_at', 'status')->where('email', $itemNew['email'])->first();
+        if ($userFound) {
+            if ($userFound->status = SYSTEM_STATUS_ACTIVE) {
+                if (is_null($userFound->email_verified_at)) {
+                    return response()->json(['error' => 'EMAIL_NOT_VERIFIED', 'messages' => __('messages.email_not_verified')]);
+                } else {
+                    if (Hash::check($itemNew['password'], $userFound->password)) {
+                        if (Auth::attempt(['email' => $itemNew['email'], 'password' => $itemNew['password']])) {
                             $user = Auth::user();
-                            $user->authToken = $user->createToken('ip:'.$request->server('REMOTE_ADDR').';User agent:'.$request->server('HTTP_USER_AGENT'))->plainTextToken;                              
-                            return response()->json(['error' => '','messages'=>__('Logged in successfully'),'data' =>$user->toArray()],200);
-                        }else
-                        {
+                            $user->authToken = $user->createToken('ip:' . $request->server('REMOTE_ADDR') . ';User agent:' . $request->server('HTTP_USER_AGENT'))->plainTextToken;
+
+                            return response()->json(['error' => '', 'messages' => __('Logged in successfully'), 'data' => $user->toArray()], 200);
+                        } else {
                             $response['error'] = 'INVALID_CREDENTIALS';
                             $response['messages'] = __('user.INVALID_CREDENTIALS');
+
                             return response()->json($response, 200);
                         }
 
-                    }
-                    else{
-                        return response()->json(['error'=>'INVALID_CREDENTIALS', 'messages'=>__('messages.invalid_credentials')]);
+                    } else {
+                        return response()->json(['error' => 'INVALID_CREDENTIALS', 'messages' => __('messages.invalid_credentials')]);
                     }
                 }
 
+            } else {
+                return response()->json(['error' => 'ITEM_NOT_FOUND', 'messages' => __('messages.user_invalid')]);
             }
-            else{
-                return response()->json(['error'=>'ITEM_NOT_FOUND', 'messages'=>__('messages.user_invalid')]);
-            }    
+        } else {
+            return response()->json(['error' => 'EMAIL_NOT_EXISTS', 'messages' => __('messages.email_not_exits')]);
         }
-        else{
-            return response()->json(['error'=>'EMAIL_NOT_EXISTS', 'messages'=>__('messages.email_not_exits')]);
-        }
-        
-
 
     }
     //otp reason =2
     public function ChangePassword(Request $request)
-    {   
-       
-        $save_token=TokenHelper::getSaveToken($request->save_token,$this->user->id);
-        $itemId=$this->user->id;
-        $validation_rule=array();
-        $validation_rule['otp']=['required'];
-        $validation_rule['password_new']=['required','min:3','max:255','alpha_dash'];
-        $validation_rule['password_old']=['required','min:3','max:255','alpha_dash'];
+    {
 
-        $itemNew=$request->item;
-        $this->validateInputKeys($itemNew,array_keys($validation_rule));
-        $this->validateInputValues($itemNew,$validation_rule);
-        $otpInfo=OtpHelper::checkOtp($this->user->email,$itemNew['otp'],2);
-        
-        $result = DB::table(TABLE_USERS)->select('password')->find($itemId);
-        if(!(Hash::check($itemNew['password_old'],$result->password))){
-            return response()->json(['error'=>'INVALID_CREDENTIALS', 'messages'=>__('messages.invalid_credentials')]);
+        $save_token = TokenHelper::getSaveToken($request->save_token, $this->user->id);
+        $itemId = $this->user->id;
+        $validation_rule = [];
+        $validation_rule['otp'] = ['required'];
+        $validation_rule['password_new'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
+        $validation_rule['password_old'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
+
+        $itemNew = $request->item;
+        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (count($validatedInputKeys) > 0) {
+            return $validatedInputKeys;
         }
-        $itemOld=array();
-        $itemOld['password']=$result->password;
 
-        $password_new=$itemNew['password_new'];
-        $itemNew=array();
-        $itemNew['password']=Hash::make($password_new);       
+        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
+        if (count($validatedInputValues) > 0) {
+            return $validatedInputValues;
+        }
+
+        $otpInfo = OtpHelper::checkOtp($this->user->email, $itemNew['otp'], 2);
+
+        $result = DB::table(TABLE_USERS)->select('password')->find($itemId);
+        if (!(Hash::check($itemNew['password_old'], $result->password))) {
+            return response()->json(['error' => 'INVALID_CREDENTIALS', 'messages' => __('messages.invalid_credentials')]);
+        }
+        $itemOld = [];
+        $itemOld['password'] = $result->password;
+
+        $password_new = $itemNew['password_new'];
+        $itemNew = [];
+        $itemNew['password'] = Hash::make($password_new);
         DB::beginTransaction();
-        try{
+        try {
 
-            $dataHistory=array();
-            $dataHistory['table_name']=TABLE_USERS;
-            $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
-            $dataHistory['method']=__FUNCTION__;
-            
-            $itemNew['updated_by']=$this->user->id;
-            $itemNew['updated_at']=Carbon::now();
-            DB::table(TABLE_USERS)->where('id',$itemId)->update($itemNew);
-            $dataHistory['table_id']=$itemId;
-            $dataHistory['action']=DB_ACTION_EDIT;            
-            unset($itemNew['updated_by'],$itemNew['created_by'],$itemNew['created_at'],$itemNew['updated_at']);
+            $dataHistory = [];
+            $dataHistory['table_name'] = TABLE_USERS;
+            $dataHistory['controller'] = (new \ReflectionClass(__CLASS__))->getShortName();
+            $dataHistory['method'] = __FUNCTION__;
 
-            $dataHistory['data_old']=json_encode($itemOld);
-            $dataHistory['data_new']=json_encode($itemNew);
-            $dataHistory['created_at']=Carbon::now();
-            $dataHistory['created_by']=$this->user->id;
+            $itemNew['updated_by'] = $this->user->id;
+            $itemNew['updated_at'] = Carbon::now();
+            DB::table(TABLE_USERS)->where('id', $itemId)->update($itemNew);
+            $dataHistory['table_id'] = $itemId;
+            $dataHistory['action'] = DB_ACTION_EDIT;
+            unset($itemNew['updated_by'], $itemNew['created_by'], $itemNew['created_at'], $itemNew['updated_at']);
 
-            $this->dBSaveHistory($dataHistory,TABLE_SYSTEM_HISTORIES);
+            $dataHistory['data_old'] = json_encode($itemOld);
+            $dataHistory['data_new'] = json_encode($itemNew);
+            $dataHistory['created_at'] = Carbon::now();
+            $dataHistory['created_by'] = $this->user->id;
+
+            $this->dBSaveHistory($dataHistory, TABLE_SYSTEM_HISTORIES);
             TokenHelper::updateSaveToken($save_token);
             OtpHelper::updateOtp($otpInfo);
-            
+
             //delete all sessions
             $this->user->tokens()->delete();
             //create new sessions
-            $authToken = $this->user->createToken('ip:'.$request->server('REMOTE_ADDR').';User agent:'.$request->server('HTTP_USER_AGENT'))->plainTextToken;                                          
+            $authToken = $this->user->createToken('ip:' . $request->server('REMOTE_ADDR') . ';User agent:' . $request->server('HTTP_USER_AGENT'))->plainTextToken;
             DB::commit();
-            return response()->json(['error' => '','messages'=>__('Password Changed'),'data' =>array('authToken'=>$authToken)],200);
+
+            return response()->json(['error' => '', 'messages' => __('Password Changed'), 'data' => ['authToken' => $authToken]], 200);
         } catch (\Exception $ex) {
             print_r($ex);
             // ELSE rollback & throw exception
             DB::rollback();
-            return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
-        } 
+
+            return response()->json(['error' => 'SERVER_ERROR', 'messages' => __('messages.SERVER_ERROR')]);
+        }
     }
     public function recoverPassword(Request $request)
-    {   
-        $validation_rule=array();
-        $validation_rule['otp']=['required'];
-        $validation_rule['email']=['required', 'string', 'email'];
-        $validation_rule['password_new']=['required','min:3','max:255','alpha_dash'];
-        $itemNew=$request->item;
-        $this->validateInputKeys($itemNew,array_keys($validation_rule));
-        $this->validateInputValues($itemNew,$validation_rule);
-        
-        
-
-        $user= User::where('email',$itemNew['email'])->first();
-        if(!$user){
-            return response()->json(['error'=>'EMAIL_NOT_EXISTS', 'messages'=>__('messages.email_not_exits')]); 
+    {
+        $validation_rule = [];
+        $validation_rule['otp'] = ['required'];
+        $validation_rule['email'] = ['required', 'string', 'email'];
+        $validation_rule['password_new'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
+        $itemNew = $request->item;
+        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (count($validatedInputKeys) > 0) {
+            return $validatedInputKeys;
         }
-        $itemId=$user->id;
-        $otpInfo=OtpHelper::checkOtp($itemNew['email'],$itemNew['otp'],2);
 
-        $itemOld=array();
-        $itemOld['password']=$user->password;
+        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
+        if (count($validatedInputValues) > 0) {
+            return $validatedInputValues;
+        }
 
-        $password_new=$itemNew['password_new'];
-        $itemNew=array();
-        $itemNew['password']=Hash::make($password_new);     
-        if(is_null($user->email_verified_at)){
-            $itemOld['email_verified_at']=$user->email_verified_at;
-            $itemNew['email_verified_at']=Carbon::now();
-        }  
+        $user = User::where('email', $itemNew['email'])->first();
+        if (!$user) {
+            return response()->json(['error' => 'EMAIL_NOT_EXISTS', 'messages' => __('messages.email_not_exits')]);
+        }
+        $itemId = $user->id;
+        $otpInfo = OtpHelper::checkOtp($itemNew['email'], $itemNew['otp'], 2);
+
+        $itemOld = [];
+        $itemOld['password'] = $user->password;
+
+        $password_new = $itemNew['password_new'];
+        $itemNew = [];
+        $itemNew['password'] = Hash::make($password_new);
+        if (is_null($user->email_verified_at)) {
+            $itemOld['email_verified_at'] = $user->email_verified_at;
+            $itemNew['email_verified_at'] = Carbon::now();
+        }
         DB::beginTransaction();
-        try{
+        try {
 
-            $dataHistory=array();
-            $dataHistory['table_name']=TABLE_USERS;
-            $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
-            $dataHistory['method']=__FUNCTION__;
-            
-            $itemNew['updated_by']=$this->user->id;
-            $itemNew['updated_at']=Carbon::now();
-            DB::table(TABLE_USERS)->where('id',$itemId)->update($itemNew);
-            $dataHistory['table_id']=$itemId;
-            $dataHistory['action']=DB_ACTION_EDIT;            
-            unset($itemNew['updated_by'],$itemNew['created_by'],$itemNew['created_at'],$itemNew['updated_at']);
+            $dataHistory = [];
+            $dataHistory['table_name'] = TABLE_USERS;
+            $dataHistory['controller'] = (new \ReflectionClass(__CLASS__))->getShortName();
+            $dataHistory['method'] = __FUNCTION__;
 
-            $dataHistory['data_old']=json_encode($itemOld);
-            $dataHistory['data_new']=json_encode($itemNew);
-            $dataHistory['created_at']=Carbon::now();
-            $dataHistory['created_by']=$this->user->id;
+            $itemNew['updated_by'] = $this->user->id;
+            $itemNew['updated_at'] = Carbon::now();
+            DB::table(TABLE_USERS)->where('id', $itemId)->update($itemNew);
+            $dataHistory['table_id'] = $itemId;
+            $dataHistory['action'] = DB_ACTION_EDIT;
+            unset($itemNew['updated_by'], $itemNew['created_by'], $itemNew['created_at'], $itemNew['updated_at']);
 
-            $this->dBSaveHistory($dataHistory,TABLE_SYSTEM_HISTORIES);
+            $dataHistory['data_old'] = json_encode($itemOld);
+            $dataHistory['data_new'] = json_encode($itemNew);
+            $dataHistory['created_at'] = Carbon::now();
+            $dataHistory['created_by'] = $this->user->id;
+
+            $this->dBSaveHistory($dataHistory, TABLE_SYSTEM_HISTORIES);
 
             OtpHelper::updateOtp($otpInfo);
-            
+
             //delete all sessions
             $user->tokens()->delete();
-            
+
             DB::commit();
-            return response()->json(['error' => '','messages'=>__('Password Reset done'),'data' =>array()],200);
+
+            return response()->json(['error' => '', 'messages' => __('Password Reset done'), 'data' => []], 200);
         } catch (\Exception $ex) {
             print_r($ex);
             // ELSE rollback & throw exception
             DB::rollback();
-            return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
-        } 
+
+            return response()->json(['error' => 'SERVER_ERROR', 'messages' => __('messages.SERVER_ERROR')]);
+        }
     }
     public function verifyEmail(Request $request)
-    {   
-        $validation_rule=array();
-        $validation_rule['otp']=['required'];
-        $validation_rule['email']=['required', 'string', 'email'];        
-        $itemNew=$request->item;
-        $this->validateInputKeys($itemNew,array_keys($validation_rule));
-        $this->validateInputValues($itemNew,$validation_rule);
-        
-        
-
-        $user= User::where('email',$itemNew['email'])->first();
-        if(!$user){
-            return response()->json(['error'=>'EMAIL_NOT_EXISTS', 'messages'=>__('messages.email_not_exits')]); 
+    {
+        $validation_rule = [];
+        $validation_rule['otp'] = ['required'];
+        $validation_rule['email'] = ['required', 'string', 'email'];
+        $itemNew = $request->item;
+        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (count($validatedInputKeys) > 0) {
+            return $validatedInputKeys;
         }
-        $itemId=$user->id;
-        $otpInfo=OtpHelper::checkOtp($itemNew['email'],$itemNew['otp'],2);
 
-        $itemOld=array();
-        $itemOld['email_verified_at']=$user->email_verified_at;
+        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
+        if (count($validatedInputValues) > 0) {
+            return $validatedInputValues;
+        }
 
-        $itemNew=array();
-        $itemNew['email_verified_at']=Carbon::now();         
+        $user = User::where('email', $itemNew['email'])->first();
+        if (!$user) {
+            return response()->json(['error' => 'EMAIL_NOT_EXISTS', 'messages' => __('messages.email_not_exits')]);
+        }
+        $itemId = $user->id;
+        $otpInfo = OtpHelper::checkOtp($itemNew['email'], $itemNew['otp'], 2);
+
+        $itemOld = [];
+        $itemOld['email_verified_at'] = $user->email_verified_at;
+
+        $itemNew = [];
+        $itemNew['email_verified_at'] = Carbon::now();
         DB::beginTransaction();
-        try{
+        try {
 
-            $dataHistory=array();
-            $dataHistory['table_name']=TABLE_USERS;
-            $dataHistory['controller']=(new \ReflectionClass(__CLASS__))->getShortName();
-            $dataHistory['method']=__FUNCTION__;
-            
-            $itemNew['updated_by']=$this->user->id;
-            $itemNew['updated_at']=Carbon::now();
-            DB::table(TABLE_USERS)->where('id',$itemId)->update($itemNew);
-            $dataHistory['table_id']=$itemId;
-            $dataHistory['action']=DB_ACTION_EDIT;            
-            unset($itemNew['updated_by'],$itemNew['created_by'],$itemNew['created_at'],$itemNew['updated_at']);
+            $dataHistory = [];
+            $dataHistory['table_name'] = TABLE_USERS;
+            $dataHistory['controller'] = (new \ReflectionClass(__CLASS__))->getShortName();
+            $dataHistory['method'] = __FUNCTION__;
 
-            $dataHistory['data_old']=json_encode($itemOld);
-            $dataHistory['data_new']=json_encode($itemNew);
-            $dataHistory['created_at']=Carbon::now();
-            $dataHistory['created_by']=$this->user->id;
+            $itemNew['updated_by'] = $this->user->id;
+            $itemNew['updated_at'] = Carbon::now();
+            DB::table(TABLE_USERS)->where('id', $itemId)->update($itemNew);
+            $dataHistory['table_id'] = $itemId;
+            $dataHistory['action'] = DB_ACTION_EDIT;
+            unset($itemNew['updated_by'], $itemNew['created_by'], $itemNew['created_at'], $itemNew['updated_at']);
 
-            $this->dBSaveHistory($dataHistory,TABLE_SYSTEM_HISTORIES);
+            $dataHistory['data_old'] = json_encode($itemOld);
+            $dataHistory['data_new'] = json_encode($itemNew);
+            $dataHistory['created_at'] = Carbon::now();
+            $dataHistory['created_by'] = $this->user->id;
+
+            $this->dBSaveHistory($dataHistory, TABLE_SYSTEM_HISTORIES);
 
             OtpHelper::updateOtp($otpInfo);
-            
+
             DB::commit();
-            return response()->json(['error' => '','messages'=>__('Email verified'),'data' =>array()],200);
+
+            return response()->json(['error' => '', 'messages' => __('Email verified'), 'data' => []], 200);
         } catch (\Exception $ex) {
             print_r($ex);
             // ELSE rollback & throw exception
             DB::rollback();
-            return response()->json(['error' => 'SERVER_ERROR', 'messages'=>__('messages.SERVER_ERROR')]);
-        } 
+
+            return response()->json(['error' => 'SERVER_ERROR', 'messages' => __('messages.SERVER_ERROR')]);
+        }
     }
-    public function getDefaultMenu(Request $request){
-        return response()->json(['error' => '','data'=>TaskHelper::getUserGroupMenu($this->user->userGroupRole)]);
+    public function getDefaultMenu(Request $request)
+    {
+        return response()->json(['error' => '', 'data' => TaskHelper::getUserGroupMenu($this->user->userGroupRole)]);
     }
-    public function getCompanies(Request $request){
-        $query=DB::table(TABLE_COMPANY_USERS.' as company_users');
-        $query->where('company_users.status','=',SYSTEM_STATUS_ACTIVE);    
-        $query->where('company_users.user_id','=',$this->user->id);
+    public function getCompanies(Request $request)
+    {
+        $query = DB::table(TABLE_COMPANY_USERS . ' as company_users');
+        $query->where('company_users.status', '=', SYSTEM_STATUS_ACTIVE);
+        $query->where('company_users.user_id', '=', $this->user->id);
         $query->select('company_users.company_id');
-        $query->join(TABLE_COMPANIES.' as companies' , 'company_users.company_id', '=', 'companies.id');
-        $query->where('companies.status','=',SYSTEM_STATUS_ACTIVE); 
+        $query->join(TABLE_COMPANIES . ' as companies', 'company_users.company_id', '=', 'companies.id');
+        $query->where('companies.status', '=', SYSTEM_STATUS_ACTIVE);
         $query->addselect('companies.name as company_name');
-        $results=$query->get();
-        return response()->json(['error' => '','data'=>$results]);
+        $results = $query->get();
+
+        return response()->json(['error' => '', 'data' => $results]);
     }
-    public function getCompanyMenu($companyId,Request $request){
-        return response()->json(['error' => '','data'=>CompanyTaskHelper::getCompanyUserGroupMenu($companyId,$this->user->companyUserGroupRole)]);
-        
+    public function getCompanyMenu($companyId, Request $request)
+    {
+        return response()->json(['error' => '', 'data' => CompanyTaskHelper::getCompanyUserGroupMenu($companyId, $this->user->companyUserGroupRole)]);
+
     }
 }
