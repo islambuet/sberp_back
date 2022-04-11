@@ -163,6 +163,9 @@ class UserController extends RootController
     {
 
         $save_token = TokenHelper::getSaveToken($request->save_token, $this->user->id);
+        if(isset($save_token['error'])&& strlen($save_token['error'])>0){
+            return response()->json($save_token);
+        }
         $itemId = $this->user->id;
         $validation_rule = [];
         $validation_rule['otp'] = ['required'];

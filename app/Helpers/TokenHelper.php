@@ -9,13 +9,11 @@
         {
             $save_token=['id'=>0,'token'=>$token,'user_id'=>$user_id];
             if(!$token){
-                response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('validation.save_token_missing')], 200)->send();
-                die();
+                return ['error'=>'VALIDATION_FAILED','messages'=>__('validation.save_token_missing')];
             }
             else{                
                 if (!ctype_alnum( str_replace(['-','_'], '', $token) ) ) {
-                    response()->json(['error'=>'VALIDATION_FAILED','messages'=>__('validation.save_token_invalid')], 200)->send();
-                    die();
+                    return ['error'=>'VALIDATION_FAILED','messages'=>__('validation.save_token_invalid')];
                 }
             }
             $result = DB::table(TABLE_SYSTEM_TOKENS)->where('user_id', $user_id)->first();
@@ -23,8 +21,7 @@
             {
                 if($result->token==$token)
                 {
-                    response()->json(['error'=>'DATA_ALREADY_SAVED','messages'=>__('validation.save_token_data_already_saved')], 200)->send();
-                    die();
+                    return ['error'=>'DATA_ALREADY_SAVED','messages'=>__('validation.save_token_data_already_saved')];
                 }
                 else
                 {

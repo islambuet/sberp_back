@@ -107,6 +107,9 @@ class CompanyUsersController extends RootController
     public function saveItems(Request $request)
     {
         $save_token=TokenHelper::getSaveToken($request->save_token,$this->user['id']);
+        if(isset($save_token['error'])&& strlen($save_token['error'])>0){
+            return response()->json($save_token);
+        }
         $company_id=$request->company_id?$request->company_id:0;
         if(!($request->items && is_array($request->items))){
             return response()->json(['error'=>'VALIDATION_FAILED','message'=>__('validation.input_not_found')]);

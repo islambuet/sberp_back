@@ -76,6 +76,9 @@ class CompaniesController extends RootController
     {
         $itemOld = [];
         $save_token = TokenHelper::getSaveToken($request->save_token, $this->user['id']);
+        if(isset($save_token['error'])&& strlen($save_token['error'])>0){
+            return response()->json($save_token);
+        }
         $itemId = $request->id ? $request->id : 0;
 
         $validation_rule = [];
