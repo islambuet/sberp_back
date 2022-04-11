@@ -38,13 +38,13 @@ class UserController extends RootController
         $validation_rule['password'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
 
         $itemNew = $request->item;
-        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
-        if (count($validatedInputKeys) > 0) {
-            return $validatedInputKeys;
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
-        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
-        if (count($validatedInputValues) > 0) {
-            return $validatedInputValues;
+        $validation = $this->validateInputValues($itemNew, $validation_rule);
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
 
         DB::beginTransaction();
@@ -72,14 +72,13 @@ class UserController extends RootController
         $validation_rule['email'] = ['required', 'string', 'email'];
         $validation_rule['reason'] = ['required', Rule::in([0, 1, 2])];
         $itemNew = $request->item;
-        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
-        if (count($validatedInputKeys) > 0) {
-            return $validatedInputKeys;
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
-
-        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
-        if (count($validatedInputValues) > 0) {
-            return $validatedInputValues;
+        $validation = $this->validateInputValues($itemNew, $validation_rule);
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
 
         $user = DB::table(TABLE_USERS)->select('*')->where('email', $itemNew['email'])->first();
@@ -118,14 +117,14 @@ class UserController extends RootController
         $validation_rule['password'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
 
         $itemNew = $request->item;
-        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
-        if (count($validatedInputKeys) > 0) {
-            return $validatedInputKeys;
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
 
-        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
-        if (count($validatedInputValues) > 0) {
-            return $validatedInputValues;
+        $validation = $this->validateInputValues($itemNew, $validation_rule);
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
         $userFound = DB::table(TABLE_USERS)->select('email', 'password', 'email_verified_at', 'status')->where('email', $itemNew['email'])->first();
         if ($userFound) {
@@ -171,14 +170,14 @@ class UserController extends RootController
         $validation_rule['password_old'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
 
         $itemNew = $request->item;
-        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
-        if (count($validatedInputKeys) > 0) {
-            return $validatedInputKeys;
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
 
-        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
-        if (count($validatedInputValues) > 0) {
-            return $validatedInputValues;
+        $validation = $this->validateInputValues($itemNew, $validation_rule);
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
 
         $otpInfo = OtpHelper::checkOtp($this->user->email, $itemNew['otp'], 2);
@@ -239,14 +238,14 @@ class UserController extends RootController
         $validation_rule['email'] = ['required', 'string', 'email'];
         $validation_rule['password_new'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
         $itemNew = $request->item;
-        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
-        if (count($validatedInputKeys) > 0) {
-            return $validatedInputKeys;
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
 
-        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
-        if (count($validatedInputValues) > 0) {
-            return $validatedInputValues;
+        $validation = $this->validateInputValues($itemNew, $validation_rule);
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
 
         $user = User::where('email', $itemNew['email'])->first();
@@ -310,14 +309,14 @@ class UserController extends RootController
         $validation_rule['otp'] = ['required'];
         $validation_rule['email'] = ['required', 'string', 'email'];
         $itemNew = $request->item;
-        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
-        if (count($validatedInputKeys) > 0) {
-            return $validatedInputKeys;
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
-
-        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
-        if (count($validatedInputValues) > 0) {
-            return $validatedInputValues;
+        
+        $validation = $this->validateInputValues($itemNew, $validation_rule);
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
 
         $user = User::where('email', $itemNew['email'])->first();

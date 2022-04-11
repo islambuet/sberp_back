@@ -38,20 +38,15 @@ abstract class RootController extends Controller
     {
         //checking if any input there
         if (!is_array($inputs)) {
-            /* response()->json(['error'=>'VALIDATION_FAILED','message'=>__('validation.input_not_found')])->send();
-            exit; */
 
             return ['error' => 'VALIDATION_FAILED', 'message' => __('validation.input_not_found')];
         }
         //checking if any invalid input
         foreach ($inputs as $key => $value) {
-            if (!$key || (!in_array($key, $keys))) {
-                /* response()->json(['error'=>'VALIDATION_FAILED','message'=>__('validation.input_not_valid',['attribute'=>$key])])->send();
-                exit; */
+            if (!$key || (!in_array($key, $keys))) {                
                 return ['error' => 'VALIDATION_FAILED', 'message' => __('validation.input_not_valid', ['attribute' => $key])];
             }
         }
-
         return [];
 
     }
@@ -61,10 +56,7 @@ abstract class RootController extends Controller
         $validator = Validator::make($inputs, $validation_rule);
         if ($validator->fails()) {
             return ['error' => 'VALIDATION_FAILED', 'message' => $validator->errors()];
-            /* response()->json(['error' => 'VALIDATION_FAILED','message' => $validator->errors()])->send();
-        exit; */
         }
-
         return [];
     }
 }

@@ -108,9 +108,9 @@ class BranchesController extends RootController
 
         $itemNew = $request->item;
 
-        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
-        if (count($validatedInputKeys) > 0) {
-            return $validatedInputKeys;
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
 
         if ($itemId > 0) {
@@ -143,9 +143,9 @@ class BranchesController extends RootController
                 return response()->json(['error' => 'ACCESS_DENIED', 'messages' => __('messages.ACCESS_DENIED_ADD')]);
             }
         }
-        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
-        if (count($validatedInputValues) > 0) {
-            return $validatedInputValues;
+        $validation = $this->validateInputValues($itemNew, $validation_rule);
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
 
         if (array_key_exists('name', $itemNew)) {

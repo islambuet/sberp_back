@@ -106,9 +106,9 @@ class CompanyUserGroupsController extends RootController
 
         $itemNew = $request->item;
         
-        $validatedInputKeys = $this->validateInputKeys($itemNew, array_keys($validation_rule));
-        if (count($validatedInputKeys) > 0) {
-            return $validatedInputKeys;
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
 
         if ($itemId > 0) {
@@ -142,9 +142,9 @@ class CompanyUserGroupsController extends RootController
             }
         }
 
-        $validatedInputValues = $this->validateInputValues($itemNew, $validation_rule);
-        if (count($validatedInputValues) > 0) {
-            return $validatedInputValues;
+        $validation = $this->validateInputValues($itemNew, $validation_rule);
+        if(isset($validation['error'])&& strlen($validation['error'])>0){
+            return response()->json($validation);
         }
 
         if (array_key_exists('name', $itemNew)) {
