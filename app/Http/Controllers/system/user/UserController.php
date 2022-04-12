@@ -184,7 +184,7 @@ class UserController extends RootController
         }
 
         $otpInfo = OtpHelper::checkOtp($this->user->email, $itemNew['otp'], 2);
-        if(isset($otpInfo['error'])&& strlen($otpInfo['error'])>0){
+        if(is_array($otpInfo) && isset($otpInfo['error'])&& strlen($otpInfo['error'])>0){
             return response()->json($otpInfo);
         }
 
@@ -260,7 +260,7 @@ class UserController extends RootController
         }
         $itemId = $user->id;
         $otpInfo = OtpHelper::checkOtp($itemNew['email'], $itemNew['otp'], 2);
-        if(isset($otpInfo['error'])&& strlen($otpInfo['error'])>0){
+        if(is_array($otpInfo) && isset($otpInfo['error'])&& strlen($otpInfo['error'])>0){
             return response()->json($otpInfo);
         }
 
@@ -334,7 +334,7 @@ class UserController extends RootController
         }
         $itemId = $user->id;
         $otpInfo = OtpHelper::checkOtp($itemNew['email'], $itemNew['otp'], 2);
-        if(isset($otpInfo['error'])&& strlen($otpInfo['error'])>0){
+        if(is_array($otpInfo) && isset($otpInfo['error'])&& strlen($otpInfo['error'])>0){
             return response()->json($otpInfo);
         }
 
