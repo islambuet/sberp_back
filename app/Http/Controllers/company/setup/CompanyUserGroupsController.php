@@ -96,7 +96,7 @@ class CompanyUserGroupsController extends RootController
 
         $itemOld = [];
         $save_token = TokenHelper::getSaveToken($request->save_token, $this->user['id']);
-        if(isset($save_token['error'])&& strlen($save_token['error'])>0){
+        if (isset($save_token['error']) && strlen($save_token['error']) > 0) {
             return response()->json($save_token);
         }
         $itemId = $request->id ? $request->id : 0;
@@ -108,9 +108,9 @@ class CompanyUserGroupsController extends RootController
         $validation_rule['status'] = [Rule::in([SYSTEM_STATUS_ACTIVE, SYSTEM_STATUS_INACTIVE])];
 
         $itemNew = $request->item;
-        
-        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
@@ -146,7 +146,7 @@ class CompanyUserGroupsController extends RootController
         }
 
         $validation = $this->validateInputValues($itemNew, $validation_rule);
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
@@ -187,6 +187,82 @@ class CompanyUserGroupsController extends RootController
             DB::commit();
 
             return response()->json(['error' => '', 'messages' => __('UserGroup Saved Successfully'), 'data' => $itemNew]);
+        } catch (\Exception $ex) {
+            print_r($ex);
+            // ELSE rollback & throw exception
+            DB::rollback();
+
+            return response()->json(['error' => 'SERVER_ERROR', 'messages' => __('messages.SERVER_ERROR')]);
+        }
+    }
+    public function saveRole($companyId, $itemId, Request $request)
+    {
+        $save_token = TokenHelper::getSaveToken($request->save_token, $this->user['id']);
+        if (isset($save_token['error']) && strlen($save_token['error']) > 0) {
+            return response()->json($save_token);
+        }
+        if ($this->permissions['action_2'] != 1) {
+            return response()->json(['error' => 'ACCESS_DENIED', 'messages' => __('messages.ACCESS_DENIED_EDIT')]);
+        }
+        $query = DB::table(TABLE_COMPANY_USER_GROUPS);
+        for ($i = 0; $i < CompanyTaskHelper::$MAX_MODULE_ACTIONS; $i++) {
+            $query->addselect('action_' . $i);
+        }
+        $query->where('company_id', $companyId);
+        $result = $query->find($itemId);
+        if (!$result) {
+            return response()->json(['error' => 'ITEM_NOT_FOUND', 'messages' => __('validation.data_not_found', ['attribute' => 'id: ' . $itemId])]);
+        }
+        $itemNew = $itemOld = (array) $result;
+
+        $tasks = $request->items;
+        if (!is_array($tasks)) {
+            return response()->json(['error' => 'VALIDATION_FAILED', 'message' => __('validation.input_not_found')]);
+        }
+        foreach ($tasks as $task) {
+            //set action_0=1 if any action is 1;
+            for ($i = 1; $i < CompanyTaskHelper::$MAX_MODULE_ACTIONS; $i++) {
+                if ((isset($task['action_' . $i])) && (($task['action_' . $i]) == 1)) {
+                    $task['action_0'] = 1;
+                }
+            }
+            for ($i = 0; $i < CompanyTaskHelper::$MAX_MODULE_ACTIONS; $i++) {
+                $itemNew['action_' . $i] = str_replace(',' . $task['id'] . ',', ',', $itemNew['action_' . $i]); //remove the task from action;
+                if (isset($task['action_' . $i])) {
+                    if (($task['action_' . $i]) == 1) {
+                        if (strpos($this->user->companyUserGroupRole[$companyId]->{'action_' . $i}, ',' . $task['id'] . ',') === false) {
+                            return response()->json(['error' => 'VALIDATION_FAILED', 'message' => __('Owener Has no action_' . $i . ' access of :' . $task['id'])]);
+                        }
+                        $itemNew['action_' . $i] .= $task['id'] . ','; //add the task into action
+                    }
+                }
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+
+            $itemNew['updated_by'] = $this->user['id'];
+            $itemNew['updated_at'] = Carbon::now();
+            DB::table(TABLE_COMPANY_USER_GROUPS)->where('id', $itemId)->update($itemNew);
+            unset($itemNew['updated_by'], $itemNew['updated_at']);
+
+            $dataHistory = [];
+            $dataHistory['table_name'] = TABLE_COMPANY_USER_GROUPS;
+            $dataHistory['controller'] = (new \ReflectionClass(__CLASS__))->getShortName();
+            $dataHistory['method'] = __FUNCTION__;
+            $dataHistory['table_id'] = $itemId;
+            $dataHistory['action'] = DB_ACTION_EDIT;
+            $dataHistory['data_old'] = json_encode($itemOld);
+            $dataHistory['data_new'] = json_encode($itemNew);
+            $dataHistory['created_at'] = Carbon::now();
+            $dataHistory['created_by'] = $this->user['id'];
+            $this->dBSaveHistory($dataHistory, TABLE_SYSTEM_HISTORIES);
+
+            TokenHelper::updateSaveToken($save_token);
+            DB::commit();
+
+            return response()->json(['error' => '', 'messages' => __('UserGroup Role Updated Successfully'), 'data' => $itemNew]);
         } catch (\Exception $ex) {
             print_r($ex);
             // ELSE rollback & throw exception
