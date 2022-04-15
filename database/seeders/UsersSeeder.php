@@ -23,10 +23,11 @@ class UsersSeeder extends Seeder
                 'email' => 'admin@admin.com',
                 'password' => Hash::make('123456'),
                 'user_group_id' => 1,
-                'mobile_no' => '01912097849',                
+                'mobile_no' => '01912097849',
+                'email_verified_at' => Carbon::now(),
                 'created_by' => 1,
-                'created_at'=>Carbon::now()
-            ],            
+                'created_at' => Carbon::now(),
+            ],
         ]);
     }
 }

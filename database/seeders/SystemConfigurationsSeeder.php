@@ -20,7 +20,15 @@ class SystemConfigurationsSeeder extends Seeder
             'description' => 'Otp expires in seconds.',
             'config_value' => 300,
             'created_by' => 1,
-            'created_at'=>Carbon::now()
-        ]);
+            'created_at' => Carbon::now(),
+        ],
+            [
+                'purpose' => SYSTEM_CONFIGURATIONS_COMPANY_USER_INVITATION_EXPIRE,
+                'description' => 'Invitation expires in seconds.',
+                'config_value' => 600,
+                'created_by' => 1,
+                'created_at' => Carbon::now(),
+            ],
+        );
     }
 }

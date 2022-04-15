@@ -15,36 +15,54 @@ class CompanyTasksSeeder extends Seeder
      */
     public function run()
     {
-        DB::table(TABLE_COMPANY_TASKS)->insert([            
+        DB::table(TABLE_COMPANY_TASKS)->insert([
             [
-                'name' => 'setup', 
+                'name' => 'setup',
                 'type' => 'MODULE',
                 'parent' => 0,
-                'url' => '',                
+                'url' => '',
                 'ordering' => 2,
                 'created_by' => 1,
-                'created_at'=>Carbon::now()
-            ],   
-                 
+                'created_at' => Carbon::now(),
+            ],
+
             [
-                'name' => 'Branches', 
+                'name' => 'Branches',
                 'type' => 'TASK',
                 'parent' => 1,
-                'url' => 'setup/branches',                
+                'url' => 'setup/branches',
                 'ordering' => 2,
                 'created_by' => 1,
-                'created_at'=>Carbon::now()
-            ], 
+                'created_at' => Carbon::now(),
+            ],
             [
-                'name' => 'User Groups', 
+                'name' => 'User Groups',
                 'type' => 'TASK',
                 'parent' => 1,
-                'url' => 'setup/company-user-groups',                
+                'url' => 'setup/company-user-groups',
                 'ordering' => 2,
                 'created_by' => 1,
-                'created_at'=>Carbon::now()
-            ],      
-                      
+                'created_at' => Carbon::now(),
+            ],
+            [
+                'name' => 'Invite Users',
+                'type' => 'TASK',
+                'parent' => 1,
+                'url' => 'setup/invite-company-users',
+                'ordering' => 3,
+                'created_by' => 1,
+                'created_at' => Carbon::now(),
+            ],
+            [
+                'name' => 'Manage Users',
+                'type' => 'TASK',
+                'parent' => 1,
+                'url' => 'setup/company-users',
+                'ordering' => 4,
+                'created_by' => 1,
+                'created_at' => Carbon::now(),
+            ],
+
         ]);
     }
 }
