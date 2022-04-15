@@ -139,7 +139,7 @@ class CompanyUsersController extends RootController
             $items[$index]['error'] = '';
             $items[$index]['messages'] = '';
             //input vaidation
-            if ((count($item) != 4) || !isset($item['user_id']) || !isset($item['company_user_group_id']) || !isset($item['company_brach_id']) || !isset($item['designation'])) {
+            if ((count($item) != 4) || !isset($item['user_id']) || !isset($item['company_user_group_id']) || !isset($item['company_branch_ids']) || !isset($item['designation'])) {
                 $items[$index]['error'] = 'VALIDATION_FAILED';
                 $items[$index]['messages'] = __('Input Missing or Invalid Input');
             }
@@ -153,7 +153,7 @@ class CompanyUsersController extends RootController
             }
             //brach checking
             if (!$items[$index]['error']) {
-                if (!(is_array($item['company_brach_id'])) || (array_diff($item['company_brach_id'], $company_branch_ids))) {
+                if (!(is_array($item['company_branch_ids'])) || (array_diff($item['company_branch_ids'], $company_branch_ids))) {
                     $items[$index]['error'] = 'VALIDATION_FAILED';
                     $items[$index]['messages'] = __('Invalid Branch');
                 }
@@ -214,9 +214,9 @@ class CompanyUsersController extends RootController
                 if (!$items[$index]['error']) {
                     try {
                         $itemNew = $item;
-                        unset($itemNew['company_brach_id'], $itemNew['error'], $itemNew['messages']);
+                        unset($itemNew['company_branch_ids'], $itemNew['error'], $itemNew['messages']);
                         $itemNew['company_id'] = $company_id;
-                        $itemNew['company_branch_ids'] = ',' . implode(',', $item['company_brach_id']) . ',';
+                        $itemNew['company_branch_ids'] = ',' . implode(',', $item['company_branch_ids']) . ',';
                         $itemNew['reason_status_active'] = COMPANY_USER_STATUS_ACTIVE_ADMIN_ADD;
                         $itemNew['status_active_id'] = 0;
                         $itemNew['status'] = SYSTEM_STATUS_ACTIVE;
