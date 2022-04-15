@@ -5,9 +5,9 @@ use App\Helpers\CompanyTaskHelper;
 use App\Helpers\ConfigurationHelper;
 use App\Helpers\OtpHelper;
 use App\Helpers\TaskHelper;
-// use App\Helpers\UserHelper;
-// use App\Helpers\UploadHelper;
 use App\Helpers\TokenHelper;
+// use App\Helpers\UploadHelper;
+use App\Helpers\UserHelper;
 use App\Http\Controllers\RootController;
 use App\Mail\MailSender;
 
@@ -38,12 +38,12 @@ class UserController extends RootController
         $validation_rule['password'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
 
         $itemNew = $request->item;
-        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
         $validation = $this->validateInputValues($itemNew, $validation_rule);
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
@@ -72,12 +72,12 @@ class UserController extends RootController
         $validation_rule['email'] = ['required', 'string', 'email'];
         $validation_rule['reason'] = ['required', Rule::in([0, 1, 2])];
         $itemNew = $request->item;
-        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
         $validation = $this->validateInputValues($itemNew, $validation_rule);
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
@@ -117,13 +117,13 @@ class UserController extends RootController
         $validation_rule['password'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
 
         $itemNew = $request->item;
-        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
         $validation = $this->validateInputValues($itemNew, $validation_rule);
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
         $userFound = DB::table(TABLE_USERS)->select('email', 'password', 'email_verified_at', 'status')->where('email', $itemNew['email'])->first();
@@ -136,12 +136,13 @@ class UserController extends RootController
                         if (Auth::attempt(['email' => $itemNew['email'], 'password' => $itemNew['password']])) {
                             $user = Auth::user();
                             $user->authToken = $user->createToken('ip:' . $request->server('REMOTE_ADDR') . ';User agent:' . $request->server('HTTP_USER_AGENT'))->plainTextToken;
-
-                            return response()->json(['error' => '', 'messages' => __('Logged in successfully'), 'data' => $user->toArray()], 200);
+                            $usertoReturn = $user->toArray();
+                            $usertoReturn['default_menu'] = TaskHelper::getUserGroupMenu(UserHelper::getCurrentUser()->userGroupRole);
+                            $usertoReturn['companies'] = UserHelper::getUserCompanies($usertoReturn['id']);
+                            return response()->json(['error' => '', 'messages' => __('Logged in successfully'), 'data' => $usertoReturn], 200);
                         } else {
                             $response['error'] = 'INVALID_CREDENTIALS';
                             $response['messages'] = __('user.INVALID_CREDENTIALS');
-
                             return response()->json($response, 200);
                         }
 
@@ -163,7 +164,7 @@ class UserController extends RootController
     {
 
         $save_token = TokenHelper::getSaveToken($request->save_token, $this->user->id);
-        if(isset($save_token['error'])&& strlen($save_token['error'])>0){
+        if (isset($save_token['error']) && strlen($save_token['error']) > 0) {
             return response()->json($save_token);
         }
         $itemId = $this->user->id;
@@ -173,18 +174,18 @@ class UserController extends RootController
         $validation_rule['password_old'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
 
         $itemNew = $request->item;
-        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
         $validation = $this->validateInputValues($itemNew, $validation_rule);
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
         $otpInfo = OtpHelper::checkOtp($this->user->email, $itemNew['otp'], 2);
-        if(is_array($otpInfo) && isset($otpInfo['error'])&& strlen($otpInfo['error'])>0){
+        if (is_array($otpInfo) && isset($otpInfo['error']) && strlen($otpInfo['error']) > 0) {
             return response()->json($otpInfo);
         }
 
@@ -244,13 +245,13 @@ class UserController extends RootController
         $validation_rule['email'] = ['required', 'string', 'email'];
         $validation_rule['password_new'] = ['required', 'min:3', 'max:255', 'alpha_dash'];
         $itemNew = $request->item;
-        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
         $validation = $this->validateInputValues($itemNew, $validation_rule);
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
@@ -260,7 +261,7 @@ class UserController extends RootController
         }
         $itemId = $user->id;
         $otpInfo = OtpHelper::checkOtp($itemNew['email'], $itemNew['otp'], 2);
-        if(is_array($otpInfo) && isset($otpInfo['error'])&& strlen($otpInfo['error'])>0){
+        if (is_array($otpInfo) && isset($otpInfo['error']) && strlen($otpInfo['error']) > 0) {
             return response()->json($otpInfo);
         }
 
@@ -318,13 +319,13 @@ class UserController extends RootController
         $validation_rule['otp'] = ['required'];
         $validation_rule['email'] = ['required', 'string', 'email'];
         $itemNew = $request->item;
-        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
         $validation = $this->validateInputValues($itemNew, $validation_rule);
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
@@ -334,7 +335,7 @@ class UserController extends RootController
         }
         $itemId = $user->id;
         $otpInfo = OtpHelper::checkOtp($itemNew['email'], $itemNew['otp'], 2);
-        if(is_array($otpInfo) && isset($otpInfo['error'])&& strlen($otpInfo['error'])>0){
+        if (is_array($otpInfo) && isset($otpInfo['error']) && strlen($otpInfo['error']) > 0) {
             return response()->json($otpInfo);
         }
 
@@ -382,18 +383,10 @@ class UserController extends RootController
     {
         return response()->json(['error' => '', 'data' => TaskHelper::getUserGroupMenu($this->user->userGroupRole)]);
     }
+
     public function getCompanies(Request $request)
     {
-        $query = DB::table(TABLE_COMPANY_USERS . ' as company_users');
-        $query->where('company_users.status', '=', SYSTEM_STATUS_ACTIVE);
-        $query->where('company_users.user_id', '=', $this->user->id);
-        $query->select('company_users.company_id');
-        $query->join(TABLE_COMPANIES . ' as companies', 'company_users.company_id', '=', 'companies.id');
-        $query->where('companies.status', '=', SYSTEM_STATUS_ACTIVE);
-        $query->addselect('companies.name as company_name');
-        $results = $query->get();
-
-        return response()->json(['error' => '', 'data' => $results]);
+        return response()->json(['error' => '', 'data' => UserHelper::getUserCompanies($this->user->id)]);
     }
     public function getCompanyMenu($companyId, Request $request)
     {
