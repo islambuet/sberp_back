@@ -21,4 +21,12 @@ Route::middleware('logged-user')->group(function () {
     Route::match(['GET', 'POST'], $url . '/get-item/{itemId}', [$controllerClass, 'getItem']);
     Route::post($url . '/save-item', [$controllerClass, 'saveItem']);
     Route::post($url . '/save-role/{itemId}', [$controllerClass, 'saveRole']);
+
+    $url = '{companyId}/company-users';
+    $controllerClass = Controllers\company\setup\CompanyUsersController::class;
+
+    Route::match(['GET', 'POST'], $url . '/initialize', [$controllerClass, 'initialize']);
+    // Route::match(['GET', 'POST'], $url . '/get-items', [$controllerClass, 'getItems']);
+    // // Route::match(array('GET','POST'),$url.'/get-item/{itemId}', [$controllerClass, 'getItem']);
+    // Route::post($url . '/save-items', [$controllerClass, 'saveItems']);
 });

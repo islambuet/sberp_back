@@ -1,9 +1,9 @@
 <?php
-namespace App\Http\Controllers\system\setup\business;
+namespace App\Http\Controllers\company\setup;
 
 use App\Http\Controllers\RootController;
 
-use App\Helpers\TaskHelper;
+use App\Helpers\CompanyTaskHelper;
 use App\Helpers\TokenHelper;
 
 use Illuminate\Http\Request;
@@ -22,7 +22,8 @@ class CompanyUsersController extends RootController
     public function __construct(Request $request)
     {
         parent::__construct($request);
-        $this->permissions = TaskHelper::getPermissions('setup/business/company-users', $this->user->userGroupRole);
+        $companyId = request()->route('companyId');
+        $this->permissions = CompanyTaskHelper::getPermissions($companyId, 'company-users', $this->user->companyUserGroupRole);
     }
     public function initialize(Request $request)
     {

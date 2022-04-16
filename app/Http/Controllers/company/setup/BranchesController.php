@@ -29,7 +29,7 @@ class BranchesController extends RootController
             return response()->json($response, 200);
 
         } else {
-            return response()->json(['error' => 'ACCESS_DENIED', 'message' => __('messages.ACCESS_DENIED')], 401);
+            return response()->json(['error' => 'ACCESS_DENIED', 'message' => __('messages.ACCESS_DENIED')]);
         }
     }
     //per_page
@@ -94,7 +94,7 @@ class BranchesController extends RootController
     {
         $itemOld = [];
         $save_token = TokenHelper::getSaveToken($request->save_token, $this->user['id']);
-        if(isset($save_token['error'])&& strlen($save_token['error'])>0){
+        if (isset($save_token['error']) && strlen($save_token['error']) > 0) {
             return response()->json($save_token);
         }
         $itemId = $request->id ? $request->id : 0;
@@ -111,8 +111,8 @@ class BranchesController extends RootController
 
         $itemNew = $request->item;
 
-        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));        
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        $validation = $this->validateInputKeys($itemNew, array_keys($validation_rule));
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
@@ -147,7 +147,7 @@ class BranchesController extends RootController
             }
         }
         $validation = $this->validateInputValues($itemNew, $validation_rule);
-        if(isset($validation['error'])&& strlen($validation['error'])>0){
+        if (isset($validation['error']) && strlen($validation['error']) > 0) {
             return response()->json($validation);
         }
 
