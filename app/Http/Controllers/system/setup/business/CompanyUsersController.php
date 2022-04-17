@@ -77,32 +77,6 @@ class CompanyUsersController extends RootController
             return response()->json(['error' => 'ACCESS_DENIED', 'messages' => __('messages.ACCESS_DENIED')]);
         }
     }
-    public function getItem($itemId, Request $request)
-    {
-        if ($this->permissions['action_0'] == 1) {
-
-            $response = [];
-            $response['error'] = '';
-            $query = DB::table(TABLE_COMPANY_USER_GROUPS . ' as user_groups');
-            $query->select('user_groups.*', 'companies.name as company_name');
-
-            $query->join(TABLE_COMPANIES . ' as companies', 'user_groups.company_id', '=', 'companies.id');
-
-            $query->where('user_groups.status', '!=', SYSTEM_STATUS_DELETE);
-            $query->where('companies.status', '!=', SYSTEM_STATUS_DELETE);
-            $query->where('user_groups.id', $itemId);
-
-            $result = $query->first();
-            if (!$result) {
-                return response()->json(['error' => 'ITEM_NOT_FOUND', 'messages' => __('validation.data_not_found', ['attribute' => 'id: ' . $itemId])]);
-            }
-            $response['data'] = $result;
-            return response()->json($response);
-
-        } else {
-            return response()->json(['error' => 'ACCESS_DENIED', 'messages' => __('messages.ACCESS_DENIED')]);
-        }
-    }
     public function saveItems(Request $request)
     {
         $save_token = TokenHelper::getSaveToken($request->save_token, $this->user['id']);
