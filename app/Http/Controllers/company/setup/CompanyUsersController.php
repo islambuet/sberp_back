@@ -130,12 +130,6 @@ class CompanyUsersController extends RootController
                             $items[$index]['messages'] = __('validation.input_not_valid', ['attribute' => $key]);
                             break;
                         }
-                        //checking status value is valid
-                        if (($key == 'status') && ($value != SYSTEM_STATUS_INACTIVE)) {
-                            $items[$index]['error'] = 'VALIDATION_FAILED';
-                            $items[$index]['messages'] = __('validation.input_value_invalid', ['attribute' => $key]);
-                            break;
-                        }
                         //checking usergroup value is valid
                         else if (($key == 'company_user_group_id') && (!($value > 0) || (!(in_array($value, $company_user_group_ids))))) {
                             $items[$index]['error'] = 'VALIDATION_FAILED';
@@ -182,63 +176,84 @@ class CompanyUsersController extends RootController
             if (!$items[$index]['error']) {
                 if (!(isset($user_infos[$item['user_id']]))) {
                     $items[$index]['error'] = 'VALIDATION_FAILED';
-                    $items[$index]['messages'] = __('User Does not Belongs to this company');
+                    $items[$index]['messages'] = __('User Does not belongs to this company');
                 } else {
-                    $changed = true;
+                    $itemOld = $itemNew = [];
+                    $key = 'company_user_group_id';
+                    if (isset($item[$key]) && ($item[$key] != $user_infos[$item['user_id']]->$key)) {
+                        $itemNew[$key] = $item[$key];
+                        $itemOld[$key] = $user_infos[$item['user_id']]->$key;
+                    }
+                    $key = 'designation';
+                    if (isset($item[$key]) && ($item[$key] != $user_infos[$item['user_id']]->$key)) {
+                        $itemNew[$key] = $item[$key];
+                        $itemOld[$key] = $user_infos[$item['user_id']]->$key;
+                    }
+                    $key = 'company_branch_ids';
+
+                    if (isset($item[$key])) {
+                        $keyvalue = ',' . implode(',', $item[$key]) . ',';
+                        if (isset($item[$key]) && ($keyvalue != $user_infos[$item['user_id']]->$key)) {
+                            $itemNew[$key] = $keyvalue;
+                            $itemOld[$key] = $user_infos[$item['user_id']]->$key;
+                        }
+                    }
+                    $key = 'status';
+                    if (isset($item[$key])) {
+                        if ($item[$key] != SYSTEM_STATUS_ACTIVE) {
+                            if ($item[$key] == SYSTEM_STATUS_INACTIVE) {
+                                $itemNew[$key] = $item[$key];
+                                $itemNew['reason_status_inactive'] = COMPANY_USER_STATUS_INACTIVE_OWNER_REMOVE;
+                                $itemNew['status_inactive_id'] = 0;
+                                $itemOld[$key] = $user_infos[$item['user_id']]->$key;
+
+                            } else {
+                                $items[$index]['error'] = 'VALIDATION_FAILED';
+                                $items[$index]['messages'] = __('validation.input_not_valid', ['attribute' => $key]);
+                            }
+                        }
+
+                    }
+                    if ($itemNew) {
+                        $items[$index]['itemOld'] = $itemOld;
+                        $items[$index]['itemNew'] = $itemNew;
+                        $changed = true;
+                    } else {
+                        $items[$index]['error'] = 'VALIDATION_FAILED';
+                        $items[$index]['messages'] = __('validation.input_not_changed');
+                    }
                 }
             }
         }
-        echo '<pre>';
-        print_r($items);
-        echo '</pre>';
-        die();
         if ($changed) {
             DB::beginTransaction();
             foreach ($items as $index => $item) {
                 if (!$items[$index]['error']) {
                     try {
-                        $itemNew = $item;
-                        unset($itemNew['company_branch_ids'], $itemNew['error'], $itemNew['messages']);
-                        $itemNew['company_id'] = $company_id;
-                        $itemNew['company_branch_ids'] = ',' . implode(',', $item['company_branch_ids']) . ',';
-                        $itemNew['reason_status_active'] = COMPANY_USER_STATUS_ACTIVE_ADMIN_ADD;
-                        $itemNew['status_active_id'] = 0;
-                        $itemNew['status'] = SYSTEM_STATUS_ACTIVE;
+                        $itemOld = $items[$index]['itemOld'];
+                        $itemNew = $items[$index]['itemNew'];
                         $itemNew['updated_by'] = $this->user['id'];
                         $itemNew['updated_at'] = Carbon::now();
 
-                        if ($user_infos[$item['user_id']]->id > 0) {
-                            DB::table(TABLE_COMPANY_USERS)->where('id', $user_infos[$item['user_id']]->id)->update($itemNew);
-                            // unset($itemNew['updated_by'],$itemNew['updated_at']);
+                        DB::table(TABLE_COMPANY_USERS)->where('id', $user_infos[$item['user_id']]->id)->update($itemNew);
+                        unset($itemNew['updated_by'], $itemNew['updated_at']);
 
-                            $dataHistory = [];
-                            $dataHistory['table_name'] = TABLE_COMPANY_USERS;
-                            $dataHistory['controller'] = (new \ReflectionClass(__CLASS__))->getShortName();
-                            $dataHistory['method'] = __FUNCTION__;
-                            $dataHistory['table_id'] = $user_infos[$item['user_id']]->id;
-                            $dataHistory['company_id'] = $company_id;
-                            $dataHistory['user_id'] = $item['user_id'];
-                            $dataHistory['action'] = DB_ACTION_EDIT;
-                            //TODO: Unset No change datas
-                            $itemOld = $user_infos[$item['user_id']];
-                            foreach ($itemOld as $key => $value) {
-                                if (!isset($itemNew[$key])) {
-                                    unset($itemOld->$key);
-                                } else if ($itemNew[$key] == $value) {
-                                    unset($itemNew[$key]);
-                                    unset($itemOld->$key);
-                                }
-                            }
-                            $dataHistory['data_old'] = json_encode($itemOld);
-                            $dataHistory['data_new'] = json_encode($itemNew);
-                            $dataHistory['created_at'] = Carbon::now();
-                            $dataHistory['created_by'] = $this->user['id'];
-                            $this->dBSaveHistory($dataHistory, TABLE_COMPANY_USER_HISTORIES);
-                            $items[$index]['messages'] = __('User Updated');
-                        } else {
-                            DB::table(TABLE_COMPANY_USERS)->insertGetId($itemNew);
-                            $items[$index]['messages'] = __('User Added');
-                        }
+                        $dataHistory = [];
+                        $dataHistory['table_name'] = TABLE_COMPANY_USERS;
+                        $dataHistory['controller'] = (new \ReflectionClass(__CLASS__))->getShortName();
+                        $dataHistory['method'] = __FUNCTION__;
+                        $dataHistory['table_id'] = $user_infos[$item['user_id']]->id;
+                        $dataHistory['company_id'] = $companyId;
+                        $dataHistory['user_id'] = $item['user_id'];
+                        $dataHistory['action'] = DB_ACTION_EDIT;
+
+                        $dataHistory['data_old'] = json_encode($itemOld);
+                        $dataHistory['data_new'] = json_encode($itemNew);
+                        $dataHistory['created_at'] = Carbon::now();
+                        $dataHistory['created_by'] = $this->user['id'];
+                        $this->dBSaveHistory($dataHistory, TABLE_COMPANY_USER_HISTORIES);
+                        $items[$index]['messages'] = __('User Updated');
+
                     } catch (\Exception $ex) {
 
                         DB::rollback();

@@ -17,7 +17,7 @@ class CompanyTasksSeeder extends Seeder
     {
         DB::table(TABLE_COMPANY_TASKS)->insert([
             [
-                'name' => 'setup',
+                'name' => 'Setup',
                 'type' => 'MODULE',
                 'parent' => 0,
                 'url' => '',
