@@ -77,168 +77,178 @@ class CompanyUsersController extends RootController
         }
     }
 
-    // public function saveItems(Request $request)
-    // {
-    //     $save_token = TokenHelper::getSaveToken($request->save_token, $this->user['id']);
-    //     if (isset($save_token['error']) && strlen($save_token['error']) > 0) {
-    //         return response()->json($save_token);
-    //     }
-    //     $company_id = $request->company_id ? $request->company_id : 0;
-    //     if (!($request->items && is_array($request->items))) {
-    //         return response()->json(['error' => 'VALIDATION_FAILED', 'message' => __('validation.input_not_found')]);
+    public function saveItems($companyId, Request $request)
+    {
+        if ($this->permissions['action_2'] != 1) {
+            return response()->json(['error' => 'ACCESS_DENIED', 'message' => __('messages.ACCESS_DENIED')]);
+        }
 
-    //     }
-    //     $items = $request->items;
-    //     //company validation
-    //     $result = DB::table(TABLE_COMPANIES)->select('id')->where('status', SYSTEM_STATUS_ACTIVE)->find($company_id);
-    //     if (!$result) {
-    //         return response()->json(['error' => 'ITEM_NOT_FOUND', 'messages' => __('validation.data_not_found', ['attribute' => 'company_id: ' . $company_id])]);
-    //     }
+        $save_token = TokenHelper::getSaveToken($request->save_token, $this->user['id']);
+        if (isset($save_token['error']) && strlen($save_token['error']) > 0) {
+            return response()->json($save_token);
+        }
+        if (!($request->items && is_array($request->items))) {
+            return response()->json(['error' => 'VALIDATION_FAILED', 'message' => __('validation.input_not_found')]);
 
-    //     $results = DB::table(TABLE_COMPANY_USER_GROUPS)->select('id')->where('company_id', $company_id)->get();
-    //     $company_user_group_ids = [];
-    //     $company_user_group_ids[0] = 0;
-    //     foreach ($results as $result) {
-    //         $company_user_group_ids[$result->id] = $result->id;
-    //     }
-    //     $results = DB::table(TABLE_COMPANY_BRANCHES)->select('id')->where('company_id', $company_id)->get();
-    //     $company_branch_ids = [];
-    //     $company_branch_ids[0] = 0;
-    //     foreach ($results as $result) {
-    //         $company_branch_ids[$result->id] = $result->id;
-    //     }
-    //     $user_ids = [];
-    //     $user_ids[0] = 0;
-    //     foreach ($items as $index => $item) {
-    //         $items[$index]['error'] = '';
-    //         $items[$index]['messages'] = '';
-    //         //input vaidation
-    //         if ((count($item) != 4) || !isset($item['user_id']) || !isset($item['company_user_group_id']) || !isset($item['company_branch_ids']) || !isset($item['designation'])) {
-    //             $items[$index]['error'] = 'VALIDATION_FAILED';
-    //             $items[$index]['messages'] = __('Input Missing or Invalid Input');
-    //         }
-    //         //usergroup checking
-    //         if (!$items[$index]['error']) {
+        }
+        $items = $request->items;
 
-    //             if (!(in_array($item['company_user_group_id'], $company_user_group_ids))) {
-    //                 $items[$index]['error'] = 'VALIDATION_FAILED';
-    //                 $items[$index]['messages'] = __('Invalid User Group');
-    //             }
-    //         }
-    //         //brach checking
-    //         if (!$items[$index]['error']) {
-    //             if (!(is_array($item['company_branch_ids'])) || (array_diff($item['company_branch_ids'], $company_branch_ids))) {
-    //                 $items[$index]['error'] = 'VALIDATION_FAILED';
-    //                 $items[$index]['messages'] = __('Invalid Branch');
-    //             }
-    //         }
-    //         //checking duplicate userid
-    //         if (!$items[$index]['error']) {
-    //             if (isset($user_ids[$item['user_id']])) {
-    //                 $items[$index]['error'] = 'VALIDATION_FAILED';
-    //                 $items[$index]['messages'] = __('Duplicate Entry');
-    //             } else {
-    //                 $user_ids[$item['user_id']] = $item['user_id'];
-    //             }
-    //         }
+        $results = DB::table(TABLE_COMPANY_USER_GROUPS)->select('id')->where('company_id', $companyId)->get();
+        $company_user_group_ids = [];
+        $company_user_group_ids[0] = 0;
+        foreach ($results as $result) {
+            $company_user_group_ids[$result->id] = $result->id;
+        }
+        $results = DB::table(TABLE_COMPANY_BRANCHES)->select('id')->where('company_id', $companyId)->get();
+        $company_branch_ids = [];
+        $company_branch_ids[0] = 0;
+        foreach ($results as $result) {
+            $company_branch_ids[$result->id] = $result->id;
+        }
+        $user_ids = [];
+        $user_ids[0] = 0;
+        foreach ($items as $index => $item) {
+            if (!is_array($item)) {
+                return response()->json(['error' => 'VALIDATION_FAILED', 'message' => __('validation.input_format_invalid')]);
+            }
+            $items[$index]['error'] = '';
+            $items[$index]['messages'] = '';
+            //user_id mandatory
+            if (!isset($item['user_id'])) {
+                $items[$index]['error'] = 'VALIDATION_FAILED';
+                $items[$index]['messages'] = __('validation.input_missing');
+            } else {
+                //atleast one other input required
+                if (count($item) < 2) {
+                    $items[$index]['error'] = 'VALIDATION_FAILED';
+                    $items[$index]['messages'] = __('validation.input_missing');
+                } else {
+                    foreach ($item as $key => $value) {
+                        //checking each key is valid input
+                        if (!(in_array($key, ['user_id', 'company_user_group_id', 'company_branch_ids', 'designation', 'status']))) {
+                            $items[$index]['error'] = 'VALIDATION_FAILED';
+                            $items[$index]['messages'] = __('validation.input_not_valid', ['attribute' => $key]);
+                            break;
+                        }
+                        //checking status value is valid
+                        if (($key == 'status') && ($value != SYSTEM_STATUS_INACTIVE)) {
+                            $items[$index]['error'] = 'VALIDATION_FAILED';
+                            $items[$index]['messages'] = __('validation.input_value_invalid', ['attribute' => $key]);
+                            break;
+                        }
+                        //checking usergroup value is valid
+                        else if (($key == 'company_user_group_id') && (!($value > 0) || (!(in_array($value, $company_user_group_ids))))) {
+                            $items[$index]['error'] = 'VALIDATION_FAILED';
+                            $items[$index]['messages'] = __('Invalid User Group');
+                        }
+                        //checking branch, TODO: 0 accepted Means no branch
+                        else if (($key == 'company_branch_ids') && (!(is_array($value)) || (array_diff($value, $company_branch_ids)))) {
+                            $items[$index]['error'] = 'VALIDATION_FAILED';
+                            $items[$index]['messages'] = __('Invalid Branch');
+                        }
+                    }
+                }
+            }
 
-    //     }
+            // checking duplicate userid
+            if (!$items[$index]['error']) {
+                if (isset($user_ids[$item['user_id']])) {
+                    $items[$index]['error'] = 'VALIDATION_FAILED';
+                    $items[$index]['messages'] = __('Duplicate Entry');
+                } else {
+                    $user_ids[$item['user_id']] = $item['user_id'];
+                }
+            }
+        }
 
-    //     $query = DB::table(TABLE_USERS . ' as users');
-    //     $query->select('company_users.*', 'users.id as user_id');
-    //     $query->where('users.status', SYSTEM_STATUS_ACTIVE);
-    //     $query->whereIn('users.id', $user_ids);
-    //     $query->leftJoin(TABLE_COMPANY_USERS . ' as company_users', function ($join) use ($company_id) {
-    //         $join->on('users.id', '=', 'company_users.user_id');
-    //         $join->on('company_users.company_id', '=', DB::raw($company_id));
-    //     });
-    //     $results = $query->get();
-    //     $user_infos = [];
-    //     foreach ($results as $result) {
-    //         $user_infos[$result->user_id] = $result;
-    //     }
-    //     // echo '<pre>';
-    //     // print_r($user_infos);
-    //     // echo '</pre>';
-    //     // die();
-    //     //valdating if need to update/add and
-    //     $changed = false;
-    //     foreach ($items as $index => $item) {
-    //         if (!$items[$index]['error']) {
-    //             if (isset($user_infos[$item['user_id']])) {
-    //                 if ($user_infos[$item['user_id']]->id > 0) {
-    //                     if ($user_infos[$item['user_id']]->status == SYSTEM_STATUS_ACTIVE) {
-    //                         $items[$index]['error'] = 'VALIDATION_FAILED';
-    //                         $items[$index]['messages'] = __('User Already Added');
-    //                     } else {
-    //                         $changed = true;
-    //                     }
-    //                 } else {
-    //                     $changed = true;
-    //                 }
-    //             } else {
-    //                 $items[$index]['error'] = 'VALIDATION_FAILED';
-    //                 $items[$index]['messages'] = __('User Not Found');
-    //             }
-    //         }
-    //     }
-    //     if ($changed) {
-    //         DB::beginTransaction();
-    //         foreach ($items as $index => $item) {
-    //             if (!$items[$index]['error']) {
-    //                 try {
-    //                     $itemNew = $item;
-    //                     unset($itemNew['company_branch_ids'], $itemNew['error'], $itemNew['messages']);
-    //                     $itemNew['company_id'] = $company_id;
-    //                     $itemNew['company_branch_ids'] = ',' . implode(',', $item['company_branch_ids']) . ',';
-    //                     $itemNew['reason_status_active'] = COMPANY_USER_STATUS_ACTIVE_ADMIN_ADD;
-    //                     $itemNew['status_active_id'] = 0;
-    //                     $itemNew['status'] = SYSTEM_STATUS_ACTIVE;
-    //                     $itemNew['updated_by'] = $this->user['id'];
-    //                     $itemNew['updated_at'] = Carbon::now();
+        $query = DB::table(TABLE_USERS . ' as users');
+        $query->select('company_users.*', 'users.id as user_id');
+        $query->where('users.status', SYSTEM_STATUS_ACTIVE);
+        $query->whereIn('users.id', $user_ids);
+        $query->join(TABLE_COMPANY_USERS . ' as company_users', function ($join) use ($companyId) {
+            $join->on('users.id', '=', 'company_users.user_id');
+            $join->where('company_users.company_id', '=', $companyId);
+            $join->where('company_users.status', '=', SYSTEM_STATUS_ACTIVE);
+        });
+        $results = $query->get();
+        $user_infos = [];
+        foreach ($results as $result) {
+            $user_infos[$result->user_id] = $result;
+        }
 
-    //                     if ($user_infos[$item['user_id']]->id > 0) {
-    //                         DB::table(TABLE_COMPANY_USERS)->where('id', $user_infos[$item['user_id']]->id)->update($itemNew);
-    //                         // unset($itemNew['updated_by'],$itemNew['updated_at']);
+        //valdating if need to update
+        $changed = false;
+        foreach ($items as $index => $item) {
+            if (!$items[$index]['error']) {
+                if (!(isset($user_infos[$item['user_id']]))) {
+                    $items[$index]['error'] = 'VALIDATION_FAILED';
+                    $items[$index]['messages'] = __('User Does not Belongs to this company');
+                } else {
+                    $changed = true;
+                }
+            }
+        }
+        echo '<pre>';
+        print_r($items);
+        echo '</pre>';
+        die();
+        if ($changed) {
+            DB::beginTransaction();
+            foreach ($items as $index => $item) {
+                if (!$items[$index]['error']) {
+                    try {
+                        $itemNew = $item;
+                        unset($itemNew['company_branch_ids'], $itemNew['error'], $itemNew['messages']);
+                        $itemNew['company_id'] = $company_id;
+                        $itemNew['company_branch_ids'] = ',' . implode(',', $item['company_branch_ids']) . ',';
+                        $itemNew['reason_status_active'] = COMPANY_USER_STATUS_ACTIVE_ADMIN_ADD;
+                        $itemNew['status_active_id'] = 0;
+                        $itemNew['status'] = SYSTEM_STATUS_ACTIVE;
+                        $itemNew['updated_by'] = $this->user['id'];
+                        $itemNew['updated_at'] = Carbon::now();
 
-    //                         $dataHistory = [];
-    //                         $dataHistory['table_name'] = TABLE_COMPANY_USERS;
-    //                         $dataHistory['controller'] = (new \ReflectionClass(__CLASS__))->getShortName();
-    //                         $dataHistory['method'] = __FUNCTION__;
-    //                         $dataHistory['table_id'] = $user_infos[$item['user_id']]->id;
-    //                         $dataHistory['company_id'] = $company_id;
-    //                         $dataHistory['user_id'] = $item['user_id'];
-    //                         $dataHistory['action'] = DB_ACTION_EDIT;
-    //                         //TODO: Unset No change datas
-    //                         $itemOld = $user_infos[$item['user_id']];
-    //                         foreach ($itemOld as $key => $value) {
-    //                             if (!isset($itemNew[$key])) {
-    //                                 unset($itemOld->$key);
-    //                             } else if ($itemNew[$key] == $value) {
-    //                                 unset($itemNew[$key]);
-    //                                 unset($itemOld->$key);
-    //                             }
-    //                         }
-    //                         $dataHistory['data_old'] = json_encode($itemOld);
-    //                         $dataHistory['data_new'] = json_encode($itemNew);
-    //                         $dataHistory['created_at'] = Carbon::now();
-    //                         $dataHistory['created_by'] = $this->user['id'];
-    //                         $this->dBSaveHistory($dataHistory, TABLE_COMPANY_USER_HISTORIES);
-    //                         $items[$index]['messages'] = __('User Updated');
-    //                     } else {
-    //                         DB::table(TABLE_COMPANY_USERS)->insertGetId($itemNew);
-    //                         $items[$index]['messages'] = __('User Added');
-    //                     }
-    //                 } catch (\Exception $ex) {
+                        if ($user_infos[$item['user_id']]->id > 0) {
+                            DB::table(TABLE_COMPANY_USERS)->where('id', $user_infos[$item['user_id']]->id)->update($itemNew);
+                            // unset($itemNew['updated_by'],$itemNew['updated_at']);
 
-    //                     DB::rollback();
-    //                     return response()->json(['error' => 'SERVER_ERROR', 'messages' => __('messages.SERVER_ERROR')]);
-    //                 }
-    //             }
-    //         }
-    //         TokenHelper::updateSaveToken($save_token);
-    //         DB::commit();
-    //     }
-    //     return $items;
-    // }
+                            $dataHistory = [];
+                            $dataHistory['table_name'] = TABLE_COMPANY_USERS;
+                            $dataHistory['controller'] = (new \ReflectionClass(__CLASS__))->getShortName();
+                            $dataHistory['method'] = __FUNCTION__;
+                            $dataHistory['table_id'] = $user_infos[$item['user_id']]->id;
+                            $dataHistory['company_id'] = $company_id;
+                            $dataHistory['user_id'] = $item['user_id'];
+                            $dataHistory['action'] = DB_ACTION_EDIT;
+                            //TODO: Unset No change datas
+                            $itemOld = $user_infos[$item['user_id']];
+                            foreach ($itemOld as $key => $value) {
+                                if (!isset($itemNew[$key])) {
+                                    unset($itemOld->$key);
+                                } else if ($itemNew[$key] == $value) {
+                                    unset($itemNew[$key]);
+                                    unset($itemOld->$key);
+                                }
+                            }
+                            $dataHistory['data_old'] = json_encode($itemOld);
+                            $dataHistory['data_new'] = json_encode($itemNew);
+                            $dataHistory['created_at'] = Carbon::now();
+                            $dataHistory['created_by'] = $this->user['id'];
+                            $this->dBSaveHistory($dataHistory, TABLE_COMPANY_USER_HISTORIES);
+                            $items[$index]['messages'] = __('User Updated');
+                        } else {
+                            DB::table(TABLE_COMPANY_USERS)->insertGetId($itemNew);
+                            $items[$index]['messages'] = __('User Added');
+                        }
+                    } catch (\Exception $ex) {
+
+                        DB::rollback();
+                        return response()->json(['error' => 'SERVER_ERROR', 'messages' => __('messages.SERVER_ERROR')]);
+                    }
+                }
+            }
+            TokenHelper::updateSaveToken($save_token);
+            DB::commit();
+        }
+        return $items;
+    }
 }

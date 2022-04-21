@@ -11,7 +11,7 @@ return [
     | the validator class. Some of these rules have multiple versions such
     | as the size rules. Feel free to tweak each of these messages here.
     |
-    */
+     */
 
     'accepted' => 'The :attribute must be accepted.',
     'accepted_if' => 'The :attribute must be accepted when :other is :value.',
@@ -67,9 +67,12 @@ return [
     'in' => 'The selected :attribute is invalid.',
     'in_array' => 'The :attribute field does not exist in :other.',
     'integer' => 'The :attribute must be an integer.',
+    'input_format_invalid' => 'Invalid Input format.',
+    'input_missing' => 'Input Missing.',
     'input_not_changed' => 'No Input Changed.',
     'input_not_found' => 'No Input Detected.',
-    'input_not_valid' => 'Input :attribute is invalid.',    
+    'input_not_valid' => 'Input :attribute is invalid.',
+    'input_value_invalid' => ':attribute value is invalid.',
     'ip' => 'The :attribute must be a valid IP address.',
     'ipv4' => 'The :attribute must be a valid IPv4 address.',
     'ipv6' => 'The :attribute must be a valid IPv6 address.',
@@ -105,10 +108,10 @@ return [
     'not_in' => 'The selected :attribute is invalid.',
     'not_regex' => 'The :attribute format is invalid.',
     'numeric' => 'The :attribute must be a number.',
-    'otp_not_found'=>'Invalid Otp',
-    'otp_expired'=>'Otp Expired',
-    'otp_mismatched'=>'Otp Mismatched',
-    'otp_already_used'=>'Otp Already Used',
+    'otp_not_found' => 'Invalid Otp',
+    'otp_expired' => 'Otp Expired',
+    'otp_mismatched' => 'Otp Mismatched',
+    'otp_already_used' => 'Otp Already Used',
     'password' => 'The password is incorrect.',
     'present' => 'The :attribute field must be present.',
     'prohibited' => 'The :attribute field is prohibited.',
@@ -127,7 +130,7 @@ return [
     'same' => 'The :attribute and :other must match.',
     'save_token_invalid' => 'Invalid Save Token.',
     'save_token_missing' => 'Save Token Missing.',
-    'save_token_data_already_saved' => 'Data already Saved.',  
+    'save_token_data_already_saved' => 'Data already Saved.',
     'size' => [
         'numeric' => 'The :attribute must be :size.',
         'file' => 'The :attribute must be :size kilobytes.',
@@ -151,7 +154,7 @@ return [
     | convention "attribute.rule" to name the lines. This makes it quick to
     | specify a specific custom language line for a given attribute rule.
     |
-    */
+     */
 
     'custom' => [
         'attribute-name' => [
@@ -168,7 +171,7 @@ return [
     | with something more reader friendly such as "E-Mail Address" instead
     | of "email". This simply helps us make our message more expressive.
     |
-    */
+     */
 
     'attributes' => [],
 
