@@ -25,7 +25,7 @@ class CreateCompanyUserInvitations extends Migration
             $table->timestamp('invited_at')->useCurrent();
             $table->integer('invited_by');
             $table->timestamp('expires_at')->nullable();
-            $table->integer('status_changed_by');
+            $table->integer('status_changed_by')->nullable();
             $table->timestamp('status_changed_at')->nullable();
         });
     }
