@@ -49,7 +49,7 @@ class UserGroupsSeeder extends Seeder
             [
                 'name' => 'Registered',
                 'ordering' => '4',
-                'action_0' => ',5,',
+                'action_0' => ',12,',
                 'action_1' => ',',
                 'action_2' => ',',
                 'action_3' => ',',
