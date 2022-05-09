@@ -1,0 +1,7 @@
+<?php
+
+//repeat type
+const REPEAT_TYPE_NO_REPEAT = 'NO_REPEAT';
+const REPEAT_TYPE_DAILY = 'DAILY';
+const REPEAT_TYPE_WEEKLY = 'WEEKLY';
+const REPEAT_TYPE_MONTHLY = 'MONTHLY';
