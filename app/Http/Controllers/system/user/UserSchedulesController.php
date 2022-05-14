@@ -61,11 +61,8 @@ class UserschedulesController extends RootController
         $validation_rule['lat'] = ['numeric', 'gt:0'];
         $validation_rule['company_ids'] = ['array']; //TODO check if all ids valid
         $validation_rule['repeat_type'] = [Rule::in([REPEAT_TYPE_NO_REPEAT, REPEAT_TYPE_DAILY, REPEAT_TYPE_WEEKLY, REPEAT_TYPE_MONTHLY])];
-        $validation_rule['note'] = ['string']; //TODO check if all ids valid
+        $validation_rule['note'] = ['string'];
 
-        // $validation_rule['company_id']=['required', 'numeric'];
-        //$validation_rule['ordering'] = ['numeric'];
-        //$validation_rule['status'] = [Rule::in([SYSTEM_STATUS_ACTIVE, SYSTEM_STATUS_INACTIVE])];
         foreach ($items as $index => $item) {
             if (!is_array($item)) {
                 return response()->json(['error' => 'VALIDATION_FAILED', 'messages' => __('validation.input_format_invalid')]);
@@ -82,6 +79,31 @@ class UserschedulesController extends RootController
                 $items[$index] = array_merge($items[$index], $validation);
             }
         }
+        $timeNow = Carbon::now();
+        DB::beginTransaction();
+        foreach ($items as $index => $item) {
+            if (!$items[$index]['error']) {
+                try {
+                    $itemNew = $item;
+                    unset($itemNew['company_ids'], $itemNew['error'], $itemNew['messages']);
+
+                    $itemNew['user_id'] = $this->user['id'];
+                    if (isset($item['company_ids'])) {
+                        $itemNew['company_ids'] = ',' . implode(',', $item['company_ids']) . ',';
+                    }
+                    $itemNew['created_at'] = $timeNow->copy();
+                    DB::table(TABLE_USER_SCHEDULES)->insertGetId($itemNew);
+                    $items[$index]['messages'] = __('Schedule Created');
+                } catch (\Exception $ex) {
+
+                    DB::rollback();
+                    return response()->json(['error' => 'SERVER_ERROR', 'messages' => __('messages.SERVER_ERROR')]);
+                }
+            }
+        }
+        TokenHelper::updateSaveToken($save_token);
+        DB::commit();
+
         return $items;
 
     }

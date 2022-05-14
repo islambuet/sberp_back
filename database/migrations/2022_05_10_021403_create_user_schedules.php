@@ -15,6 +15,7 @@ class CreateUserSchedules extends Migration
     {
         Schema::create(TABLE_USER_SCHEDULES, function (Blueprint $table) {
             $table->id();
+            $table->integer('user_id');
             $table->timestamp('start_time')->nullable();
             $table->timestamp('end_time')->nullable();
             $table->integer('occupation_id');
