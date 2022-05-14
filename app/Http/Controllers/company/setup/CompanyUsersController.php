@@ -34,7 +34,7 @@ class CompanyUsersController extends RootController
             return response()->json($response, 200);
 
         } else {
-            return response()->json(['error' => 'ACCESS_DENIED', 'message' => __('messages.ACCESS_DENIED')]);
+            return response()->json(['error' => 'ACCESS_DENIED', 'messages' => __('messages.ACCESS_DENIED')]);
         }
     }
     //per_page
@@ -80,7 +80,7 @@ class CompanyUsersController extends RootController
     public function saveItems($companyId, Request $request)
     {
         if ($this->permissions['action_2'] != 1) {
-            return response()->json(['error' => 'ACCESS_DENIED', 'message' => __('messages.ACCESS_DENIED')]);
+            return response()->json(['error' => 'ACCESS_DENIED', 'messages' => __('messages.ACCESS_DENIED')]);
         }
 
         $save_token = TokenHelper::getSaveToken($request->save_token, $this->user['id']);
@@ -88,7 +88,7 @@ class CompanyUsersController extends RootController
             return response()->json($save_token);
         }
         if (!($request->items && is_array($request->items))) {
-            return response()->json(['error' => 'VALIDATION_FAILED', 'message' => __('validation.input_not_found')]);
+            return response()->json(['error' => 'VALIDATION_FAILED', 'messages' => __('validation.input_not_found')]);
 
         }
         $items = $request->items;
@@ -109,7 +109,7 @@ class CompanyUsersController extends RootController
         $user_ids[0] = 0;
         foreach ($items as $index => $item) {
             if (!is_array($item)) {
-                return response()->json(['error' => 'VALIDATION_FAILED', 'message' => __('validation.input_format_invalid')]);
+                return response()->json(['error' => 'VALIDATION_FAILED', 'messages' => __('validation.input_format_invalid')]);
             }
             $items[$index]['error'] = '';
             $items[$index]['messages'] = '';

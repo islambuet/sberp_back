@@ -33,7 +33,7 @@ class CompanyUsersController extends RootController
             return response()->json($response, 200);
 
         } else {
-            return response()->json(['error' => 'ACCESS_DENIED', 'message' => __('messages.ACCESS_DENIED')]);
+            return response()->json(['error' => 'ACCESS_DENIED', 'messages' => __('messages.ACCESS_DENIED')]);
         }
     }
     //per_page
@@ -85,7 +85,7 @@ class CompanyUsersController extends RootController
         }
         $company_id = $request->company_id ? $request->company_id : 0;
         if (!($request->items && is_array($request->items))) {
-            return response()->json(['error' => 'VALIDATION_FAILED', 'message' => __('validation.input_not_found')]);
+            return response()->json(['error' => 'VALIDATION_FAILED', 'messages' => __('validation.input_not_found')]);
 
         }
         $items = $request->items;

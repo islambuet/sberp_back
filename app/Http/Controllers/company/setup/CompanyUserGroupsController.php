@@ -29,7 +29,7 @@ class CompanyUserGroupsController extends RootController
             return response()->json($response, 200);
 
         } else {
-            return response()->json(['error' => 'ACCESS_DENIED', 'message' => __('messages.ACCESS_DENIED')]);
+            return response()->json(['error' => 'ACCESS_DENIED', 'messages' => __('messages.ACCESS_DENIED')]);
         }
     }
     //per_page
@@ -217,7 +217,7 @@ class CompanyUserGroupsController extends RootController
 
         $tasks = $request->items;
         if (!is_array($tasks)) {
-            return response()->json(['error' => 'VALIDATION_FAILED', 'message' => __('validation.input_not_found')]);
+            return response()->json(['error' => 'VALIDATION_FAILED', 'messages' => __('validation.input_not_found')]);
         }
         foreach ($tasks as $task) {
             //set action_0=1 if any action is 1;
@@ -231,7 +231,7 @@ class CompanyUserGroupsController extends RootController
                 if (isset($task['action_' . $i])) {
                     if (($task['action_' . $i]) == 1) {
                         if (strpos($this->user->companyUserGroupRole[$companyId]->{'action_' . $i}, ',' . $task['id'] . ',') === false) {
-                            return response()->json(['error' => 'VALIDATION_FAILED', 'message' => __('Owener Has no action_' . $i . ' access of :' . $task['id'])]);
+                            return response()->json(['error' => 'VALIDATION_FAILED', 'messages' => __('Owener Has no action_' . $i . ' access of :' . $task['id'])]);
                         }
                         $itemNew['action_' . $i] .= $task['id'] . ','; //add the task into action
                     }
