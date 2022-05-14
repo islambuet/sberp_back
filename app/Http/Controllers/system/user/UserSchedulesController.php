@@ -92,7 +92,8 @@ class UserschedulesController extends RootController
                         $itemNew['company_ids'] = ',' . implode(',', $item['company_ids']) . ',';
                     }
                     $itemNew['created_at'] = $timeNow->copy();
-                    DB::table(TABLE_USER_SCHEDULES)->insertGetId($itemNew);
+                    $id = DB::table(TABLE_USER_SCHEDULES)->insertGetId($itemNew);
+                    $items[$index]['id'] = $id;
                     $items[$index]['messages'] = __('Schedule Created');
                 } catch (\Exception $ex) {
 
