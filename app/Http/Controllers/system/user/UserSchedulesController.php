@@ -33,8 +33,57 @@ class UserschedulesController extends RootController
             return response()->json($response, 200);
 
         } else {
-            return response()->json(['error' => 'ACCESS_DENIED', 'message' => __('messages.ACCESS_DENIED')]);
+            return response()->json(['error' => 'ACCESS_DENIED', 'messages' => __('messages.ACCESS_DENIED')]);
         }
+    }
+    public function addItems(Request $request)
+    {
+        if ($this->permissions['action_1'] != 1) {
+            return response()->json(['error' => 'ACCESS_DENIED', 'messages' => __('messages.ACCESS_DENIED')]);
+        }
+        $save_token = TokenHelper::getSaveToken($request->save_token, $this->user['id']);
+        if (isset($save_token['error']) && strlen($save_token['error']) > 0) {
+            return response()->json($save_token);
+        }
+        if (!($request->items && is_array($request->items))) {
+            return response()->json(['error' => 'VALIDATION_FAILED', 'messages' => __('validation.input_not_found')]);
+
+        }
+        $items = $request->items;
+
+        $validation_rule = [];
+        $validation_rule['start_time'] = ['required', 'string']; //TODO time format
+        $validation_rule['end_time'] = ['required', 'string']; //TODO time format
+        $validation_rule['occupation_id'] = ['required', 'numeric', 'gt:0']; //TODO check if exists in db
+        $validation_rule['hourly_rate'] = ['required', 'numeric', 'gt:0']; //TODO check if exists in db
+        $validation_rule['address'] = ['string'];
+        $validation_rule['long'] = ['numeric', 'gt:0'];
+        $validation_rule['lat'] = ['numeric', 'gt:0'];
+        $validation_rule['company_ids'] = ['array']; //TODO check if all ids valid
+        $validation_rule['repeat_type'] = [Rule::in([REPEAT_TYPE_NO_REPEAT, REPEAT_TYPE_DAILY, REPEAT_TYPE_WEEKLY, REPEAT_TYPE_MONTHLY])];
+        $validation_rule['note'] = ['string']; //TODO check if all ids valid
+
+        // $validation_rule['company_id']=['required', 'numeric'];
+        //$validation_rule['ordering'] = ['numeric'];
+        //$validation_rule['status'] = [Rule::in([SYSTEM_STATUS_ACTIVE, SYSTEM_STATUS_INACTIVE])];
+        foreach ($items as $index => $item) {
+            if (!is_array($item)) {
+                return response()->json(['error' => 'VALIDATION_FAILED', 'messages' => __('validation.input_format_invalid')]);
+            }
+            $items[$index]['error'] = '';
+            $items[$index]['messages'] = '';
+            $validation = $this->validateInputKeys($item, array_keys($validation_rule));
+            if (isset($validation['error']) && strlen($validation['error']) > 0) {
+                $items[$index] = array_merge($items[$index], $validation);
+                continue;
+            }
+            $validation = $this->validateInputValues($item, $validation_rule);
+            if (isset($validation['error']) && strlen($validation['error']) > 0) {
+                $items[$index] = array_merge($items[$index], $validation);
+            }
+        }
+        return $items;
+
     }
 
 }
