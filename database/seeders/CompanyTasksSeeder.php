@@ -62,6 +62,42 @@ class CompanyTasksSeeder extends Seeder
                 'created_by' => 1,
                 'created_at' => Carbon::now(),
             ],
+            [
+                'name' => 'Schedule Management',
+                'type' => 'MODULE',
+                'parent' => 0,
+                'url' => '',
+                'ordering' => 2,
+                'created_by' => 1,
+                'created_at' => Carbon::now(),
+            ],
+            [
+                'name' => 'Manage Schedules',
+                'type' => 'TASK',
+                'parent' => 6,
+                'url' => 'schedules',
+                'ordering' => 4,
+                'created_by' => 1,
+                'created_at' => Carbon::now(),
+            ],
+            [
+                'name' => 'Invite users to Schedule',
+                'type' => 'TASK',
+                'parent' => 6,
+                'url' => 'schedule/invite-users',
+                'ordering' => 4,
+                'created_by' => 1,
+                'created_at' => Carbon::now(),
+            ],
+            [
+                'name' => 'Manage users Request to join Schedule',
+                'type' => 'TASK',
+                'parent' => 6,
+                'url' => 'schedule/request-users',
+                'ordering' => 4,
+                'created_by' => 1,
+                'created_at' => Carbon::now(),
+            ],
 
         ]);
     }
